@@ -4,7 +4,7 @@
 # Description: A common control object.
 import paho.mqtt.client as mqtt
 import agent_essentials.console as console
-from threading import Timer
+from threading import Timer, Thread
 
 class Agent:
     def __init__(self, Owner, DeviceId, OnUpdateReady , mqtt_client = None):
@@ -55,7 +55,11 @@ class Broker():
         self.Password = Password
         if ( (Username != None ) & (Password != None)):
             self.Client.username_pw_set(self.Username, self.Password)
+        self._Thread = None
         
+    def publish(self, topic, payload):
+        self.Client.publish(topic,payload)
+
     def on_disconnect(self):
         console.error(f"Disconnected from broker ({self.Host})")
         quit()
@@ -70,7 +74,11 @@ class Broker():
         self.Client.on_disconnect = self.on_disconnect
         self.Client.on_connect_fail = self.on_connect_fail
         self.Client.connect(self.Host, 1883, 60)
-        console.info(f"Connected to broker ({self.Host}as{self.ClientId})")
+        console.info(f"Connected to broker ({self.Host} as {self.ClientId})")
+    
+    def disconnect(self):
+        self.Client.disconnect()
+        
 
     def add(self, agent):
         agent.Configure(self.Client)
@@ -97,3 +105,17 @@ class Broker():
         except:
             console.error("Broker loop failed")
             quit()
+
+    def start(self):
+        self._Thread = Thread(target=self.loop)
+        self._Thread.start()
+    
+    
+    def stop(self):
+        self.disconnect()
+    
+
+    def join(self):
+        if ( self._Thread != None):
+            self._Thread.join()
+    
