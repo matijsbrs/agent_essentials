@@ -3,7 +3,7 @@
 # Version: 0.1 Alpha
 # Description: A common control object.
 import paho.mqtt.client as mqtt
-import toolkit.console as console
+import agent_essentials.console as console
 from threading import Timer
 
 class Agent:
