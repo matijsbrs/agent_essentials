@@ -40,4 +40,5 @@ As it can be that all new values are needed to perform an operation the delayed 
 Version 1.0.0
 	@30112021 ^MB 
 	Added documentation and set this as the Version 1.0.0
+	Added Version variable to the Agent and Broker. 
  

@@ -1,10 +1,13 @@
 # Date: 16 Maart 2021
 # Author: Ing. M. Behrens
-# Version: 0.1 Alpha
+# Version: 1.0.0
+
 # Description: A common control object.
 import paho.mqtt.client as mqtt
 import agent_essentials.console as console
+from agent_essentials.base import _version,_date
 from threading import Timer, Thread
+
 
 class Agent:
     def __init__(self, Owner, DeviceId, OnUpdateReady , mqtt_client = None):
@@ -18,6 +21,9 @@ class Agent:
         self.on_update  = None
         self.interval   = 1
         self.is_running = False
+        self.version = _version
+        self.date = _date
+        console.debug(f"Agent ({self.version} @ {self.date}) for: {Owner}.{DeviceId}")
 
     def message(self, client, topic, msg):
         console.debug(f"{topic}:{msg}","Agent.message")
@@ -56,6 +62,9 @@ class Broker():
         if ( (Username != None ) & (Password != None)):
             self.Client.username_pw_set(self.Username, self.Password)
         self._Thread = None
+        self.version = _version
+        self.date = _date
+        console.debug(f"Broker ({self.version}_{self.date}) for: {self.ClientId}")
         
     def publish(self, topic, payload):
         self.Client.publish(topic,payload)
