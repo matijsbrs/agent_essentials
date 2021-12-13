@@ -3,6 +3,7 @@
 # Version: 1.0.0
 
 # Description: A common control object.
+import sys
 import paho.mqtt.client as mqtt
 import agent_essentials.console as console
 from agent_essentials.base import _version,_date
@@ -64,6 +65,7 @@ class Broker():
         self._Thread = None
         self.version = _version
         self.date = _date
+        self._on_message = self.on_message
         console.debug(f"Broker ({self.version}_{self.date}) for: {self.ClientId}")
         
     def publish(self, topic, payload):
@@ -79,7 +81,7 @@ class Broker():
 
     def connect(self):
         self.Client.on_connect = self.on_connect
-        self.Client.on_message = self.on_message
+        self.Client.on_message = self._on_message
         self.Client.on_disconnect = self.on_disconnect
         self.Client.on_connect_fail = self.on_connect_fail
         self.Client.connect(self.Host, 1883, 60)
@@ -88,6 +90,8 @@ class Broker():
     def disconnect(self):
         self.Client.disconnect()
         
+    def subscribe(self, topic):
+        self.Topics.append(topic)
 
     def add(self, agent):
         agent.Configure(self.Client)
@@ -112,7 +116,8 @@ class Broker():
         try:
             self.Client.loop_forever()
         except:
-            console.error("Broker loop failed")
+            console.error(f"Broker loop failed for client:{self.ClientId}")
+            sys.exit(f"Broker loop failed for client:{self.ClientId}")
             quit()
 
     def start(self):
