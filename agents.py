@@ -1,9 +1,12 @@
-# Date: 16 Maart 2021
+# Date: 19 Decemeber 2021
 # Author: Ing. M. Behrens
-# Version: 1.0.0
+# Version: 1.0.1
+# @161221_1.0.1 changed the quit() calles to os._exit(0) to forcefully quit. 
+
 
 # Description: A common control object.
 import sys
+import os
 import paho.mqtt.client as mqtt
 import agent_essentials.console as console
 from agent_essentials.base import _version,_date
@@ -73,11 +76,11 @@ class Broker():
 
     def on_disconnect(self):
         console.error(f"Disconnected from broker ({self.Host})")
-        quit()
+        os._exit(0)
 
     def on_connect_fail(self):
         console.error(f"Could not connect to broker ({self.Host})")
-        quit()
+        os._exit(0)
 
     def connect(self):
         self.Client.on_connect = self.on_connect
@@ -118,7 +121,7 @@ class Broker():
         except:
             console.error(f"Broker loop failed for client:{self.ClientId}")
             sys.exit(f"Broker loop failed for client:{self.ClientId}")
-            quit()
+            os._exit(0)
 
     def start(self):
         self._Thread = Thread(target=self.loop)
