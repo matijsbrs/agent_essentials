@@ -5,8 +5,10 @@
 
 
 # Description: A common control object.
+from logging import info
 import sys
 import os
+from chirpstack_api.gw.gw_pb2 import ConnState
 import paho.mqtt.client as mqtt
 import agent_essentials.console as console
 from agent_essentials.base import _version,_date
@@ -85,13 +87,19 @@ class Broker():
     def connect(self):
         self.Client.on_connect = self.on_connect
         self.Client.on_message = self._on_message
-        self.Client.on_disconnect = self.on_disconnect
+        # self.Client.on_disconnect = self.on_disconnect
         self.Client.on_connect_fail = self.on_connect_fail
         self.Client.connect(self.Host, 1883, 60)
         console.info(f"Connected to broker ({self.Host} as {self.ClientId})")
     
     def disconnect(self):
-        self.Client.disconnect()
+        if self.Client.is_connected() == True:
+            try:
+                self.Client.disconnect()
+            except Exception as ex:
+                console.error(f"exception: {ex}")
+                console.error("Gracefull disconnecting {self.ClientId} failed.")
+        os._exit(0)
         
     def subscribe(self, topic):
         self.Topics.append(topic)
@@ -118,10 +126,14 @@ class Broker():
     def loop(self):
         try:
             self.Client.loop_forever()
-        except:
-            console.error(f"Broker loop failed for client:{self.ClientId}")
-            sys.exit(f"Broker loop failed for client:{self.ClientId}")
-            os._exit(0)
+        except Exception as exp:
+            # raise exp # uncomment for debugging
+            console.error(f"Broker loop failed for client:{self.ClientId} with {exp}")
+            # sys.exit(f"Broker loop failed for client:{self.ClientId}")
+            self.stop()
+        finally:
+            console.error(f"loop ended.")
+        
 
     def start(self):
         self._Thread = Thread(target=self.loop)
@@ -129,6 +141,7 @@ class Broker():
     
     
     def stop(self):
+        self.Client.loop_stop()
         self.disconnect()
     
 
