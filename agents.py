@@ -2,13 +2,17 @@
 # Author: Ing. M. Behrens
 # Version: 1.0.1
 # @161221_1.0.1 changed the quit() calles to os._exit(0) to forcefully quit. 
+# Version: 1.0.2
+# @161221_1.0.2 An excidental incorrect import was added which caused the script to fail. 
+#               It is now removed. 
+#               Added Debug option to the Broker class. When the client loop fails and Debug=True
+#               Then the exception is 're'-raised. in stead of directly exiting the applicato
 
 
 # Description: A common control object.
 from logging import info
 import sys
 import os
-from chirpstack_api.gw.gw_pb2 import ConnState
 import paho.mqtt.client as mqtt
 import agent_essentials.console as console
 from agent_essentials.base import _version,_date
@@ -71,6 +75,7 @@ class Broker():
         self.version = _version
         self.date = _date
         self._on_message = self.on_message
+        self.Debug = False
         console.debug(f"Broker ({self.version}_{self.date}) for: {self.ClientId}")
         
     def publish(self, topic, payload):
@@ -127,9 +132,9 @@ class Broker():
         try:
             self.Client.loop_forever()
         except Exception as exp:
-            # raise exp # uncomment for debugging
+            if self.Debug == True:
+                raise exp # uncomment for debugging
             console.error(f"Broker loop failed for client:{self.ClientId} with {exp}")
-            # sys.exit(f"Broker loop failed for client:{self.ClientId}")
             self.stop()
         finally:
             console.error(f"loop ended.")
