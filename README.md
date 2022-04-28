@@ -42,3 +42,11 @@ Version 1.0.0
 	Added documentation and set this as the Version 1.0.0
 	Added Version variable to the Agent and Broker. 
  
+
+#### Tips 'n Tricks
+
+Get all git submodules
+	'git submodule update --init --recursive'
+
+Install all the required python modules
+	$ pip install -r requirements.txt
