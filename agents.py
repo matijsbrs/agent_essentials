@@ -89,13 +89,14 @@ class Broker():
         console.error(f"Could not connect to broker ({self.Host})")
         os._exit(0)
 
-    def connect(self):
+    def connect(self) -> bool:
         self.Client.on_connect = self.on_connect
         self.Client.on_message = self._on_message
         # self.Client.on_disconnect = self.on_disconnect
         self.Client.on_connect_fail = self.on_connect_fail
         self.Client.connect(self.Host, 1883, 60)
         console.info(f"Connected to broker ({self.Host} as {self.ClientId})")
+        return self.Client.is_connected()
     
     def disconnect(self):
         if self.Client.is_connected() == True:
