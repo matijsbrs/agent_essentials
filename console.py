@@ -1,4 +1,5 @@
 import datetime
+from glob import glob
 import time
 from colorama import Fore, Back, Style
 
@@ -15,7 +16,27 @@ def fprint(text, EOL=True):
         endchar = '\n\r'
     print(f'[{timestamp: <23}] {text}\r', end=endchar,flush=True )
 
+# Functions to manipulate the outputs
+def hide_errors(state = False):
+    global _show_error
+    _show_error = state
+
+def hide_warnings(state = False):
+    global _show_warning
+    _show_warning = state
+
+def hide_info(state = False):
+    global _show_info
+    _show_info = state
+
+def hide_debug(state = False):
+    global _show_debug
+    _show_debug = state
+
+
+# output functions
 def error(text, EOL=True):
+    global _show_error
     if _show_error:
         timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000')
         endchar = ''
@@ -25,6 +46,7 @@ def error(text, EOL=True):
         print(f'[{timestamp: <23}] {Back.RED}{Fore.BLACK}{title: ^10}{Style.RESET_ALL} {text}\r', end=endchar,flush=True )
 
 def warning(text, EOL=True):
+    global _show_warning
     if _show_warning:
         timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000')
         endchar = ''
@@ -34,6 +56,7 @@ def warning(text, EOL=True):
         print(f'[{timestamp: <23}] {Back.YELLOW}{Fore.BLACK}{title: ^10}{Style.RESET_ALL} {text}\r', end=endchar,flush=True )
 
 def info(text, EOL=True):
+    global _show_info
     if _show_info:
         timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000')
         endchar = ''
@@ -43,6 +66,7 @@ def info(text, EOL=True):
         print(f'[{timestamp: <23}] {Back.GREEN}{Fore.BLACK}{title: ^10}{Style.RESET_ALL} {text}\r', end=endchar,flush=True )
 
 def debug(text,source="debug", EOL=True):
+    global _show_debug
     if _show_debug:
         timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000')
         endchar = ''
