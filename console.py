@@ -8,6 +8,7 @@ _show_warning = True
 _show_info = True
 _show_debug = True
 
+bool_as_int = lambda x : 1 if ( x ) else 0
 
 def fprint(text, EOL=True):
     timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000')
