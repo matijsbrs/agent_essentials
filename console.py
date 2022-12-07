@@ -84,14 +84,14 @@ def info(text, title = "Info", EOL=True):
             endchar = '\n\r'
         print(f'[{timestamp: <{_timestamp_width}}] {Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {text}\r', end=endchar,flush=True )
 
-def notice(text,title = f"Info", EOL=True):
+def notice(text,title = f"notice", EOL=True):
     global _show_notice, _title_width, _timestamp_width
     if _show_notice:
         timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000')
         endchar = ''
         if EOL:
             endchar = '\n\r'
-        print(f'[{timestamp: <{_timestamp_width}}] {Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {text}\r', end=endchar,flush=True )
+        print(f'[{timestamp: <{_timestamp_width}}] {Back.LIGHTCYAN_EX}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {text}\r', end=endchar,flush=True )
 
 
 def debug(text,source="debug", EOL=True):
@@ -107,7 +107,7 @@ def debug(text,source="debug", EOL=True):
 def spinner(text, delay=0.2):
     spinner = ['/','-','\\','|']
     for char in spinner:
-        fprint(f'{text} {char}',EOL=False)
+        fprint(f'{char} {text} ',EOL=False)
         time.sleep(delay) 
 
 def info_spinner(text,title='info', delay=0.2, EOL=False):
