@@ -110,13 +110,16 @@ def spinner(text, delay=0.2):
         fprint(f'{char} {text} ',EOL=False)
         time.sleep(delay) 
 
-def info_spinner(text,title='info', delay=0.2, EOL=False):
+def info_spinner(text,title='info', text_done=None, delay=0.2, cycles=1, EOL=False):
     global _show_info
     if _show_info:
         spinner = ['/','-','\\','|']
-        for char in spinner:
-            fprint(f'{Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {char} {text}                 ',EOL=False)
-            time.sleep(delay) 
-        fprint(f'{Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {text}                ',EOL=False)
+        if text_done == None:
+            text_done = text
+        for cycle in range(cycles):
+            for char in spinner:
+                fprint(f'{Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {char} {text}                 ',EOL=False)
+                time.sleep(delay) 
+            fprint(f'{Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {text_done}                ',EOL=False)
         if EOL:
             print('')
