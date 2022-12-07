@@ -17,11 +17,12 @@ The Broker wrapper handles the connecting of agents to a given MQTT broker.
 Wrapper functions for console output
 
 Features:
-	Console.fprint()
-	Console.Debug()
-	Console.Info()
-	Console.Warning()
-	Console.Error()
+	Console.fprint()   Generic fprint with timestamp included.
+	Console.Debug()    Debug releated messages. (add source="function name or file")
+	Console.Info()     Everything not importand but provides info.
+	Console.Warning()  Problems or info that should be handled
+	Console.Error()    Display Explicit error messages (critial)
+	Console.Notice()   A message received or transmitted eg. operational info
 
 	The output level can be dynamically changed
 	See the code for examples
@@ -36,6 +37,15 @@ As it can be that all new values are needed to perform an operation the delayed 
 
 
 #### Change Log
+
+Version 1.1.0
+	@07122022 ^MB
+	Added info_spinner 
+	Changed the spinner text layout to [spinner] [text] this look better
+	Added option to change the width of the timestamp field
+	Added option to change the width of the title field
+	Added a notice line. 
+
 
 Version 1.0.0
 	@30112021 ^MB 
