@@ -35,6 +35,12 @@ As it can be that all new values are needed to perform an operation the delayed 
 
 ### Change Log :page_with_curl:
 
+**Version 1.2.2** 
+> @09122022 ^MB
+> - *agents.py:Broker.\_\_init\_\_()* now has improved Client_id generation. <br>
+The host name + a random number (1..999) is now used if no explicit clientID is given. 
+> - Minor change to the readme file.
+
 **Version 1.2.1** :heavy_check_mark:
 > @08122022 ^MB
 > - [Release v1.2.1](https://github.com/matijsbrs/agent_essentials/releases/tag/v1.2.1)
@@ -65,7 +71,6 @@ As it can be that all new values are needed to perform an operation the delayed 
 > - Added documentation and set this as the Version 1.0.0
 > - Added Version variable to the Agent and Broker. 
 
-
 ### Tips 'n Tricks
 
 1. Get all git submodules:
@@ -81,6 +86,6 @@ As it can be that all new values are needed to perform an operation the delayed 
     $ git tag v1.2.3
     $ bash prepare.sh
     $ git commit -a
-    $ git push origin v1.2.3
     $ git push
+    $ git push origin v1.2.3
     ```

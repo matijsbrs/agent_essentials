@@ -11,8 +11,10 @@
 
 # Description: A common control object.
 from logging import info
+from random import randint
 import sys
 import os
+import socket
 import paho.mqtt.client as mqtt
 import agent_essentials.console as console
 from agent_essentials.base import _version,_date
@@ -60,11 +62,10 @@ class Agent:
 class Broker():
     def __init__(self, Host, ClientId=None, Username=None, Password=None):
         self.Agents = {}
+        if ( ClientId == None ):
+            ClientId =  f"{socket.getfqdn()}.{randint(1,999)}"
         self.ClientId = ClientId
-        if ( ClientId != None ):
-            self.Client = mqtt.Client()
-        else:
-            self.Client = mqtt.Client(self.ClientId)
+        self.Client = mqtt.Client(self.ClientId)
         self.Host = Host
         self.Topics = []
         self.Username = Username
