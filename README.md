@@ -82,4 +82,5 @@ As it can be that all new values are needed to perform an operation the delayed 
     $ bash prepare.sh
     $ git commit -a
     $ git push origin v1.2.3
+    $ git push
     ```
