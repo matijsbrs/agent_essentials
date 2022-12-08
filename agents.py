@@ -125,9 +125,15 @@ class Broker():
         
     def on_connect(self, client, userdata, flags, rc):
         console.info("Connected with result code "+str(rc))
+        if ( rc == 5 ) : 
+            console.warning(f"Please check credentials")
+            raise ConnectionRefusedError
+            
+
         for topic in self.Topics:
             client.subscribe(topic,2)
             console.info(f"Subscribed to: {topic}" )
+        return True
             
     def loop(self):
         try:

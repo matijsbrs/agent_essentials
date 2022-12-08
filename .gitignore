@@ -1,3 +1,6 @@
+# Project related
+Examples/environment_defaults.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
