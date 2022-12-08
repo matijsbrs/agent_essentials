@@ -33,20 +33,25 @@ Also the agent can do  a 'delayed' call. this way a period of data accumulation 
 For example a sensor publishes 10 different values, it can be usefull wait for n seconds before processing the data. <br>
 As it can be that all new values are needed to perform an operation the delayed method makes this possible.  <br>
 
-#### Change Log :page_with_curl:
+### Change Log :page_with_curl:
 
-Version 1.2.0 :heavy_check_mark:
-> [Release](https://github.com/matijsbrs/agent_essentials/releases/tag/v1.2.0)
+**Version 1.2.1** :heavy_check_mark:
 > @08122022 ^MB
+> - [Release v1.2.1](https://github.com/matijsbrs/agent_essentials/releases/tag/v1.2.1)
 > - Added a prepare script. It should be run prior to any 'push tag' to automatically include the tag version in the broker settings. See: [Tip 'n tricks](#Tips-'n-Tricks)
 
-Version 1.1.2 :heavy_check_mark:
-> [Release](https://github.com/matijsbrs/agent_essentials/releases/tag/v1.1.2)
-> @07122022
+**Version 1.2.0** 
+> @07122022 ^MB
+> - Added example project
+> - Added disconnect on credentials check.
+
+**Version 1.1.2** :heavy_check_mark:
+> @07122022 ^MB 
+> - [Release v1.1.2](https://github.com/matijsbrs/agent_essentials/releases/tag/v1.1.2)
 > - Minor changes
 > - First release version.
 
-Version 1.1.0
+**Version 1.1.0**
 > @07122022 ^MB
 > - Added info_spinner 
 > - Changed the spinner text layout to [spinner] [text] this look better
@@ -55,30 +60,26 @@ Version 1.1.0
 > - Added a notice line. 
 > - Release candidate. 
 
-
-Version 1.0.0
+**Version 1.0.0**
 > @30112021 ^MB 
 > - Added documentation and set this as the Version 1.0.0
 > - Added Version variable to the Agent and Broker. 
- 
 
-#### Tips 'n Tricks
 
-Get all git submodules:
-```
-'git submodule update --init --recursive'
-```
+### Tips 'n Tricks
 
-Install all the required python modules:
-```
-$ pip install -r requirements.txt
-```
-
-Push a new tag / version:
-```
-$ git commit -a
-$ git tag v1.2.3
-$ bash prepare.sh
-$ git push
-$ git push origin v1.2.3
-```
+1. Get all git submodules:
+    ```
+    'git submodule update --init --recursive'
+    ```
+2. Install all the required python modules:
+    ```
+    $ pip install -r requirements.txt
+    ```
+3. Push a new tag / version:
+    ```
+    $ git tag v1.2.3
+    $ bash prepare.sh
+    $ git commit -a
+    $ git push origin v1.2.3
+    ```

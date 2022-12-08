@@ -1,3 +1,3 @@
 
-_version = "v1.2.0"
+_version = "v1.2.1"
 _date = "08122022"
