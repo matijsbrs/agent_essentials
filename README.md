@@ -38,6 +38,12 @@ As it can be that all new values are needed to perform an operation the delayed 
 
 #### Change Log
 
+Version 1.2.0
+	@08122022 ^MB
+	Added a prepare script. It should be run prior to any 'push tag' to automatically include the tag version 
+	in the broker settings.
+	See: Tip 'n tricks
+
 Version 1.1.0
 	@07122022 ^MB
 	Added info_spinner 
@@ -60,3 +66,10 @@ Get all git submodules
 
 Install all the required python modules
 	$ pip install -r requirements.txt
+
+Push a new tag / version
+	$ git commit -a
+	$ git tag v1.2.3
+	$ bash prepare.sh
+	$ git push
+	$ git push origin v1.2.3
