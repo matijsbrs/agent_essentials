@@ -7,7 +7,8 @@
 #               It is now removed. 
 #               Added Debug option to the Broker class. When the client loop fails and Debug=True
 #               Then the exception is 're'-raised. in stead of directly exiting the applicato
-
+# @201222_1.2.3 Minor changes to improve mqtt integration
+#                minor release is comming up.
 
 # Description: A common control object.
 from logging import info
@@ -22,12 +23,27 @@ from threading import Timer, Thread
 
 
 class Agent:
+    mqtt_client = None
+    topic = None
+    _on_message = None
+    _on_update_ready = None
+    timer     = None
+    on_update  = None
+    interval   = 1
+    is_running = False
+    version = _version
+    date = _date
+
+    def __init__(self) -> None:
+        console.notice(f"basic agent ({self.version} @ {self.date})")
+
+
     def __init__(self, Owner, DeviceId, OnUpdateReady , mqtt_client = None):
         self.mqtt_client = mqtt_client
         self.device_id = DeviceId
         self.owner = Owner
         self.topic = f"{self.owner}/{self.device_id}/+/+"
-        self._on_message = self.message
+        self._on_message = self.on_message
         self._on_update_ready = OnUpdateReady
         self._timer     = None
         self.on_update  = None
@@ -37,7 +53,7 @@ class Agent:
         self.date = _date
         console.debug(f"Agent ({self.version} @ {self.date}) for: {Owner}.{DeviceId}")
 
-    def message(self, client, topic, msg):
+    def on_message(self, client, topic, msg):
         console.debug(f"{topic}:{msg}","Agent.message")
 
     def Configure(self, mqtt_client):
