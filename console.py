@@ -123,3 +123,12 @@ def info_spinner(text,title='info', text_done=None, delay=0.2, cycles=1, EOL=Fal
             fprint(f'{Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {text_done}                ',EOL=False)
         if EOL:
             print('')
+
+def timer(func):
+    def wrapper(*args, **kwargs):
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000')
+        title = "Duration"
+        before = time.time()
+        func(*args, **kwargs)
+        print(f'[{timestamp: <{_timestamp_width}}] {Back.WHITE}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {time.time()-before} seconds\r',flush=True )
+    return wrapper
