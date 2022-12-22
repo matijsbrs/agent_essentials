@@ -1,0 +1,9 @@
+{
+ "instruction":"dim",
+ "parameter": [
+   {
+    "driver":"0",
+    "level":"255"
+   }
+ ]
+}

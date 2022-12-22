@@ -9,6 +9,12 @@
 #               Then the exception is 're'-raised. in stead of directly exiting the applicato
 # @201222_1.2.3 Minor changes to improve mqtt integration
 #                minor release is comming up.
+# @211222_1.2.5 moved some of the 'private' properties to public. 
+#                renamed self.message -> self.on_message to identify it as a handler
+#                the default topic is changed -> {owner}/{device_id}/# was {owner}/{device_id}/+/+
+#                #TODO on_message / reference topic is still a bit of a bodge job. needs cleaning up.
+# @221222_1.3.0 Nieuw minor release. 
+#                Improved documentation
 
 # Description: A common control object.
 from logging import info
@@ -53,9 +59,14 @@ class Agent:
         self.date = _date
         
     def on_message(self, client, topic, msg):
+        '''Handle the incomming messages
+        This function is a virtual function, it should be overriden by the inherriting class '''
         console.debug(f"{topic}:{msg}","Agent.message")
 
     def Configure(self, mqtt_client):
+        '''
+        This function is called by the mqtt_client when the agent is added.
+        '''
         self.mqtt_client    = mqtt_client
     
     def publish(self, topic, payload):

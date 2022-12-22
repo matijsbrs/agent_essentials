@@ -14,7 +14,7 @@ The Broker wrapper handles the connecting of agents to a given MQTT broker.
 
 ### Console beautifier
 
-Wrapper functions for console output
+Support functions for console output
 
 Features:
 - Console.fprint()   Generic fprint with timestamp included.
@@ -25,6 +25,9 @@ Features:
 - Console.Notice()   A message received or transmitted eg. operational info
 
 The output level can be dynamically changed. See the code for examples
+
+Wrapper functions:
+- Timer() (@timer)  This wrapper function allows for easy timing of the function call duration.
 
 ### Agents
 
