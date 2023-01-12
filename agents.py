@@ -44,11 +44,11 @@ class Agent:
         console.notice(f"basic agent ({self.version} @ {self.date})")
 
 
-    def __init__(self, Owner, DeviceId, OnUpdateReady , mqtt_client = None):
+    def __init__(self, topic, OnUpdateReady , mqtt_client = None):
         self.mqtt_client = mqtt_client
-        self.device_id = DeviceId
-        self.owner = Owner
-        self.topic = f"{self.owner}/{self.device_id}"
+        # self.device_id = DeviceId
+        # self.owner = Owner
+        self.topic = topic
         self._on_message = self.on_message
         self._on_update_ready = OnUpdateReady
         self._timer     = None
