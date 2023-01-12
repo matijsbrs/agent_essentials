@@ -48,7 +48,7 @@ class Agent:
         self.mqtt_client = mqtt_client
         self.device_id = DeviceId
         self.owner = Owner
-        self.topic = f"{self.owner}/{self.device_id}/#"
+        self.topic = f"{self.owner}/{self.device_id}"
         self._on_message = self.on_message
         self._on_update_ready = OnUpdateReady
         self._timer     = None
@@ -140,15 +140,14 @@ class Broker():
     def add(self, agent):
         agent.Configure(self.Client)
         # self.Agents.append(agent)
-        referenceTopic = agent.topic.replace("/#","")
-        self.Agents[referenceTopic] = agent.on_message
+        self.Agents[agent.topic] = agent.on_message
         self.Topics.append(agent.topic)
 
     def on_message(self, client, userdata, msg):
-        t = msg.topic.split("/")
-        referenceTopic = f"{t[0]}/{t[1]}/{t[2]}/{t[3]}"
-        if referenceTopic in self.Agents:
-            self.Agents[referenceTopic](client, msg.topic, msg)
+        # t = msg.topic.split("/")
+        # referenceTopic = f"{t[0]}/{t[1]}/{t[2]}/{t[3]}"
+        if msg.topic in self.Agents:
+            self.Agents[msg.topic](client, msg.topic, msg)
         
     def on_connect(self, client, userdata, flags, rc):
         console.info("Connected with result code "+str(rc))
