@@ -86,13 +86,14 @@ class Agent:
 
 
 class Broker():
-    def __init__(self, Host, ClientId=None, Username=None, Password=None):
+    def __init__(self, Host, ClientId=None, Username=None, Password=None, Port=1883):
         self.Agents = {}
         if ( ClientId == None ):
             ClientId =  f"{socket.getfqdn()}.{randint(1,999)}"
         self.ClientId = ClientId
         self.Client = mqtt.Client(self.ClientId)
         self.Host = Host
+        self.Port = Port
         self.Topics = []
         self.Username = Username
         self.Password = Password
@@ -121,7 +122,7 @@ class Broker():
         self.Client.on_message = self._on_message
         # self.Client.on_disconnect = self.on_disconnect
         self.Client.on_connect_fail = self.on_connect_fail
-        self.Client.connect(self.Host, 1883, 60)
+        self.Client.connect(self.Host, self.Port, 60)
         console.info(f"Connected to broker ({self.Host} as {self.ClientId})")
         return self.Client.is_connected()
     
