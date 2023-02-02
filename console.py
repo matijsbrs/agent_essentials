@@ -111,14 +111,29 @@ def spinner(text, delay=0.2):
         time.sleep(delay) 
 
 def info_spinner(text,title='info', text_done=None, delay=0.2, cycles=1, EOL=False):
+    """
+    A spinner to animate the delay. 
+
+    text : The text to show 
+           Include [cycle] in the string and it will be replaced by the cycle counter
+
+    text_done : The text shown after the last spin cycle
+
+    delay : in seconds (default 0.2)
+
+    cycles : number of cycles to repeat 
+
+    EOL : include a EOL at the end of every line cycle.
+    """
     global _show_info
     if _show_info:
         spinner = ['/','-','\\','|']
         if text_done == None:
-            text_done = text
+            text_done = text.replace("[cycle]", f"")
         for cycle in range(cycles):
+            disp_text = text.replace("[cycle]", f"{cycles-cycle}")
             for char in spinner:
-                fprint(f'{Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {char} {text}                 ',EOL=False)
+                fprint(f'{Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {char} {disp_text}                 ',EOL=False)
                 time.sleep(delay) 
             fprint(f'{Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {text_done}                ',EOL=False)
         if EOL:

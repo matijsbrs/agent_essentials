@@ -17,12 +17,13 @@ The Broker wrapper handles the connecting of agents to a given MQTT broker.
 Support functions for console output
 
 Features:
-- Console.fprint()   Generic fprint with timestamp included.
-- Console.Debug()    Debug releated messages. (add source="function name or file")
-- Console.Info()     Everything not importand but provides info.
-- Console.Warning()  Problems or info that should be handled
-- Console.Error()    Display Explicit error messages (critial)
-- Console.Notice()   A message received or transmitted eg. operational info
+- Console.fprint()          Generic fprint with timestamp included.
+- Console.Debug()           Debug releated messages. (add source="function name or file")
+- Console.Info()            Everything not importand but provides info.
+- Console.Warning()         Problems or info that should be handled
+- Console.Error()           Display Explicit error messages (critial)
+- Console.Notice()          A message received or transmitted eg. operational info
+- Console.info_spinner()    Same as the Info() function, but with a spinner -> '/ - \ |'
 
 The output level can be dynamically changed. See the code for examples
 
@@ -37,6 +38,11 @@ For example a sensor publishes 10 different values, it can be usefull wait for n
 As it can be that all new values are needed to perform an operation the delayed method makes this possible.  <br>
 
 ### Change Log :page_with_curl:
+
+**Version 1.3.2**
+> @02022023 ^MB
+> - *console.py:info\_spinner()* can now show the cycle it is in. Add \[cycle\] to the text string.
+> - Added more comments to the code. 
 
 **Version 1.2.2** 
 > @09122022 ^MB
