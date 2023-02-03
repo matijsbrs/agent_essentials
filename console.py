@@ -133,9 +133,9 @@ def info_spinner(text,title='info', text_done=None, delay=0.2, cycles=1, EOL=Fal
         for cycle in range(cycles):
             disp_text = text.replace("[cycle]", f"{cycles-cycle}")
             for char in spinner:
-                fprint(f'{Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {char} {disp_text}                 ',EOL=False)
+                fprint(f'{Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {char} {disp_text}                                     ',EOL=False)
                 time.sleep(delay) 
-            fprint(f'{Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {text_done}                ',EOL=False)
+            fprint(    f'{Back.GREEN}{Fore.BLACK}{title: ^{_title_width}}{Style.RESET_ALL} {text_done}                                            ',EOL=False)
         if EOL:
             print('')
 
