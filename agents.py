@@ -97,6 +97,8 @@ class Broker():
         self.Topics = []
         self.Username = Username
         self.Password = Password
+        if ( (Username != None ) & (Password == None)):
+            self.Client.username_pw_set(self.Username)
         if ( (Username != None ) & (Password != None)):
             self.Client.username_pw_set(self.Username, self.Password)
         self._Thread = None
@@ -138,17 +140,25 @@ class Broker():
     def subscribe(self, topic):
         self.Topics.append(topic)
 
-    def add(self, agent):
+
+# use the topics as a list of topics. This will set all the topics to this agent.
+    def add(self, agent, topics = None):
         agent.Configure(self.Client)
-        # self.Agents.append(agent)
-        self.Agents[agent.topic] = agent.on_message
-        self.Topics.append(agent.topic)
+        if ( topics == None) :
+            self.Agents[agent.topic] = agent.on_message
+            self.Topics.append(agent.topic)
+        else:
+            self.Agents['wildcard'] = agent.on_message
+            self.Topics = topics
 
     def on_message(self, client, userdata, msg):
         # t = msg.topic.split("/")
         # referenceTopic = f"{t[0]}/{t[1]}/{t[2]}/{t[3]}"
-        if msg.topic in self.Agents:
-            self.Agents[msg.topic](client, msg.topic, msg)
+        if 'wildcard' in self.Agents:
+            self.Agents['wildcard'](client, msg.topic, msg)
+        else:
+            if msg.topic in self.Agents:
+                self.Agents[msg.topic](client, msg.topic, msg)
         
     def on_connect(self, client, userdata, flags, rc):
         console.info("Connected with result code "+str(rc))
@@ -158,8 +168,8 @@ class Broker():
             
 
         for topic in self.Topics:
-            client.subscribe(topic,2)
-            console.info(f"Subscribed to: {topic}" )
+            self.Client.subscribe(topic,2)
+            console.info(f"Subscribed to: {topic} @ {self.ClientId}" )
         return True
             
     def loop(self):
