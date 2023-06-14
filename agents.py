@@ -30,6 +30,7 @@ from threading import Timer, Thread
 
 class Agent:
     mqtt_client = None
+    eui = None
     topic = None
     _on_message = None
     _on_update_ready = None
@@ -39,6 +40,11 @@ class Agent:
     is_running = False
     version = _version
     date = _date
+
+    # Dictionary with attribute fields.
+    # Dictionary with Telemetry fields.
+    attributes = {}
+    telemetry = {}
 
     def __init__(self) -> None:
         console.notice(f"basic agent ({self.version} @ {self.date})")
@@ -83,6 +89,44 @@ class Agent:
             self._timer = Timer(self.interval,self._run)
             self._timer.start()
             self.is_running = True
+
+# Added @140623 ^MBRS standardizing Attribute interface.
+    def set_Attribute(self, name, value):
+        self.attributes[name] = value
+
+    def get_Attribute(self, name):
+        if ( name in self.attributes ):
+            return self.attributes[name]
+        else:
+            return {}
+        
+    def update_Attributes(self, attrList):
+        for name, value in attrList.items():
+            self.attributes[name] = value      
+
+    def dump_Attributes(self, startingWith = None):
+        for name, value in self.attributes.items():
+            if ( startingWith != None ):
+                if ( name.startswith(startingWith) ):
+                    console.debug(f"{name}:{value}",self.eui) 
+            else:
+                console.debug(f"{name}:{value}",self.eui) 
+        
+# Added @140623 ^MBRS standardizing telemetry interface.
+    def set_Telemetry(self, name, value):
+        self.telemetry[name] = value
+
+    def get_Telemetry(self, name):
+        if ( name in self.telemetry ):
+            return self.telemetry[name]
+        else:
+            return {}
+
+    def update_Telemetries(self, telemetryList):
+        for name, value in telemetryList.items():
+            self.telemetry[name] = value
+        
+
 
 
 class Broker():

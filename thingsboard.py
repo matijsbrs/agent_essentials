@@ -100,8 +100,12 @@ class Gateway_Agent(Gateway):
                 if ( 'method' in msgJson['data'] ):
                     # request
                     request_id = msgJson['data']['id']
-                    rpc_ack = {"device": device, "id":request_id, "data": {"success":True}}
-                    self.rpc_Device(device, msgJson['data'])
+                    # rpc_ack = {"device": device, "id":request_id, "data": {"success":True}}
+                    
+                    response = self.rpc_Device(dev, msgJson['data'])
+
+                    rpc_ack = {"device": device, "id":request_id, "data": response}
+                    
                     client.publish("v1/gateway/rpc", json.dumps(rpc_ack))
                     console.notice(f'pushed ACK {json.dumps(rpc_ack)}')
                 elif ( topic == "v1/gateway/rpc/attribute"):
@@ -130,4 +134,6 @@ class Gateway_Agent(Gateway):
         rpc_method = msgData['method']
         for method,function in self.tb_rpc_methods.items():
             if ( rpc_method == method ):
+                result = function(msgData)
                 console.info(f"{device}.rpc method: {method} -> {function(msgData)}")
+                return result
