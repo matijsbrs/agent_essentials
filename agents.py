@@ -15,6 +15,10 @@
 #                #TODO on_message / reference topic is still a bit of a bodge job. needs cleaning up.
 # @221222_1.3.0 Nieuw minor release. 
 #                Improved documentation
+# @140623_1.3.1 Nieuw minor release. 
+#                Added standardizing for telemetry and attributes
+
+
 
 # Description: A common control object.
 from logging import info
@@ -76,7 +80,10 @@ class Agent:
         self.mqtt_client    = mqtt_client
     
     def publish(self, topic, payload):
-        self.mqtt_client.publish(topic,payload)
+        if ( self.mqtt_client != None):
+            self.mqtt_client.publish(topic,payload)
+        else:
+            console.error("mqtt_client not set. Device offline", self.eui)
 
     def _run(self):
         self.on_update()

@@ -73,7 +73,9 @@ class Gateway_Agent(Gateway):
     def __init__(self) -> None:
         self.topics = [
             'v1/gateway/rpc',
-            'v1/gateway/rpc/attributes'
+            'v1/gateway/rpc/attributes',
+            'v1/gateway/attributes',
+            'v1/gateway/attributes/response'
         ]
         self.topic = 'v1/gateway/rpc/request/+'
         console.notice(f"Thingsboard agent ({self.version} @ {self.date})")
@@ -82,20 +84,21 @@ class Gateway_Agent(Gateway):
         self.Agent[name] = agent
 
     def NotifyThingsboard(self):
-        for device in self.Agent:
-            self.publish('v1/gateway/connect', '{"device":'+device+'}')
+        for name, device in self.Agent.items():
+            self.publish('v1/gateway/connect', '{"device":'+name+'}')
+            self.publish('v1/gateway/attributes', '{'+name+' : '+ json.dumps(device.attributes) +' }')
+            self.publish('v1/gateway/attributes/request', '{ "id" : 1, "device" : '+name+' , "client" : true, "key"  : "sunset_offset" }')
 
 
     def on_message(self, client, topic, msg):
         # Convert the bytes object to a string
         json_string = msg.payload.decode('utf-8')
-        console.notice(f"topic_@: {topic}: {json_string}")
         msgJson = json.loads(json_string)
         console.notice(f"topic_@: {topic}: {msgJson}")
         device = msgJson['device']
         if ( device in self.Agent):
             dev = self.Agent[device]    
-            console.notice(f"topic_@: {topic}: for device: {device} Data: {msgJson['data']}")
+            console.notice(f"topic_@: {topic}: for known device: {device} ")
             if ( topic == "v1/gateway/rpc" ):
                 if ( 'method' in msgJson['data'] ):
                     # request
@@ -108,10 +111,10 @@ class Gateway_Agent(Gateway):
                     
                     client.publish("v1/gateway/rpc", json.dumps(rpc_ack))
                     console.notice(f'pushed ACK {json.dumps(rpc_ack)}')
-                elif ( topic == "v1/gateway/rpc/attribute"):
-                    self.update_Device_properties(dev , msgJson['data'])
-                else:
-                    console.notice('ack')
+            elif ( topic == "v1/gateway/rpc/attribute"):
+                self.update_Device_properties(dev , msgJson['data'])
+            else:
+                console.notice('ack')
             return
         
         
