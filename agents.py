@@ -21,6 +21,7 @@
 
 
 # Description: A common control object.
+import json
 from logging import info
 from random import randint
 import sys
@@ -30,6 +31,7 @@ import paho.mqtt.client as mqtt
 import agent_essentials.console as console
 from agent_essentials.base import _version,_date
 from threading import Timer, Thread
+import os
 
 
 class Agent:
@@ -97,27 +99,59 @@ class Agent:
             self._timer.start()
             self.is_running = True
 
-# Added @140623 ^MBRS standardizing Attribute interface.
+    # Added @140623 ^MBRS standardizing Attribute interface.
     def set_Attribute(self, name, value):
+        # set the value of the attribute 
         self.attributes[name] = value
 
     def get_Attribute(self, name):
+        # get the value of the attribute
         if ( name in self.attributes ):
             return self.attributes[name]
         else:
             return {}
         
     def update_Attributes(self, attrList):
+        
+        # update the attributes with the new values
         for name, value in attrList.items():
             self.attributes[name] = value      
 
     def dump_Attributes(self, startingWith = None):
+        # dump the attributes to the console
         for name, value in self.attributes.items():
             if ( startingWith != None ):
                 if ( name.startswith(startingWith) ):
                     console.debug(f"{name}:{value}",self.eui) 
             else:
                 console.debug(f"{name}:{value}",self.eui) 
+    
+    def store_Attributes(self, filename):
+        # store the attributes to a file
+        
+        try:
+            if os.path.exists(filename):
+                with open(filename, 'w') as f:  # update existing file
+                    f.write(json.dumps(self.attributes))
+            else:
+                console.notice(f"Creating atrtibute file: {filename}")
+                with open(filename, 'x') as f:  # create new file
+                    f.write(json.dumps(self.attributes))
+        except Exception as ex:
+            console.error(f"store_Attributes: {ex}")
+
+    def restore_Attributes(self, filename):
+        # restore the attributes from a file
+        try:
+            if os.path.exists(filename):
+                with open(filename, 'r') as f:  # reading JSON object
+                    self.attributes = json.loads(f.read())
+            else:
+                console.notice(f"File not found calling store_Attributes: {filename}")
+                self.store_Attributes(filename)
+        except Exception as ex:
+            console.error(f"restore_Attributes failed: {ex}")
+            self.store_Attributes(filename)
         
 # Added @140623 ^MBRS standardizing telemetry interface.
     def set_Telemetry(self, name, value):
@@ -132,8 +166,7 @@ class Agent:
     def update_Telemetries(self, telemetryList):
         for name, value in telemetryList.items():
             self.telemetry[name] = value
-        
-
+       
 
 
 class Broker():

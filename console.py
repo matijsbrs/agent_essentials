@@ -139,6 +139,9 @@ def info_spinner(text,title='info', text_done=None, delay=0.2, cycles=1, EOL=Fal
         if EOL:
             print('')
 
+def get_Timestamp():
+    return datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000')
+    
 def timer(func):
     def wrapper(*args, **kwargs):
         timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000')
