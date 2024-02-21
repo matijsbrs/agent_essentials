@@ -126,6 +126,19 @@ class Agent:
             else:
                 console.debug(f"{name}:{value}",self.eui) 
     
+    def push_Attributes(self,deviceName=None, values=[]):
+        '''
+        Push the Attribute values to the MQTT broker format: self.topic {"attributes":[{attributes values}]}
+        '''
+        if ( deviceName == None ):
+            deviceName = self.eui
+        if values == []:
+            values = self.attributes
+        payload = { 'attributes': [values] }
+        if ( self.mqtt_client is not None ) :
+            self.mqtt_client.publish(self.topic, json.dumps(payload))
+
+
     def store_Attributes(self, filename):
         # store the attributes to a file
         
@@ -155,19 +168,55 @@ class Agent:
         
 # Added @140623 ^MBRS standardizing telemetry interface.
     def set_Telemetry(self, name, value):
+        '''
+        Set a specific value of a telemetry field
+        '''
         self.telemetry[name] = value
 
     def get_Telemetry(self, name):
+        '''
+        Get a specific value of a telemetry field
+        '''
         if ( name in self.telemetry ):
             return self.telemetry[name]
         else:
             return {}
 
+    def update_telemetry_value(self, name, value):
+        '''
+        Update a specific value of a telemetry field
+        '''
+        if ( name in self.telemetry_values ):
+            self.telemetry_values[name] = value
+        else:
+            self.telemetry_values.append(name)
+            self.telemetry_values[name] = value
+
     def update_Telemetries(self, telemetryList):
+        '''
+        Update the telemetry fields with the new values
+        '''
         for name, value in telemetryList.items():
             self.telemetry[name] = value
-       
+        
+    def push_telemetry(self,deviceName=None, values=[]):
+        '''
+        Push the telemetry values to the MQTT broker format: self.topic {"telemetry":[{telemetry values}]}
+        '''
+        if ( deviceName == None ):
+            deviceName = self.eui
+        if values == []:
+            values = self.telemetry
+        payload = { 'telemetry': [values] }
+        if ( self.mqtt_client is not None ) :
+            self.mqtt_client.publish(self.topic, json.dumps(payload))
 
+    def dump_telemetry_values(self):
+        '''
+        Debug function to dump the telemetry values to the console
+        '''
+        for field in self.telemetry_values:
+            print(f"{field[0]} : {field[1]}")
 
 class Broker():
     def __init__(self, Host, ClientId=None, Username=None, Password=None, Port=1883):
