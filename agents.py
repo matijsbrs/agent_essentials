@@ -52,11 +52,16 @@ class Agent:
     attributes = {}
     telemetry = {}
 
+    # @010324 ^MBRS
+    # When set True the pio will try to load external attributes from the json file located in [external_attribbutes_path]/[eui].attributes.json
+    external_attributes = True 
+    external_attributes_path = "./pios" 
+
     def __init__(self) -> None:
         console.notice(f"basic agent ({self.version} @ {self.date})")
+        
 
-
-    def __init__(self, topic, OnUpdateReady , mqtt_client = None):
+    def __init__(self, topic, OnUpdateReady , mqtt_client = None, use_external_attributes=False):
         self.mqtt_client = mqtt_client
         # self.device_id = DeviceId
         # self.owner = Owner
@@ -69,6 +74,8 @@ class Agent:
         self.is_running = False
         self.version = _version
         self.date = _date
+        self.external_attributes = use_external_attributes
+        self.restore_Attributes(f"{self.external_attributes_path}{self.eui}.attributes.json")
         
     def on_message(self, client, topic, msg):
         '''Handle the incomming messages
@@ -139,9 +146,15 @@ class Agent:
             self.mqtt_client.publish(self.topic, json.dumps(payload))
 
 
-    def store_Attributes(self, filename):
-        # store the attributes to a file
-        
+    def store_Attributes(self, filename=None):
+        # store the attributes to a file       
+        if filename == None:
+            if self.eui == None:
+                console.error(f"Cannot restore pio without eui.")
+                return
+            else:
+                filename = f"{self.external_attributes_path}/{self.eui}.attributes.json"
+           
         try:
             if os.path.exists(filename):
                 with open(filename, 'w') as f:  # update existing file
@@ -155,6 +168,14 @@ class Agent:
 
     def restore_Attributes(self, filename):
         # restore the attributes from a file
+        
+        if filename == None:
+            if self.eui == None:
+                console.error(f"Cannot restore pio without eui.")
+                return
+            else:
+                filename = f"{self.external_attributes_path}/{self.eui}.attributes.json"
+        
         try:
             if os.path.exists(filename):
                 with open(filename, 'r') as f:  # reading JSON object
