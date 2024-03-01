@@ -61,7 +61,7 @@ class Agent:
         console.notice(f"basic agent ({self.version} @ {self.date})")
         
 
-    def __init__(self, topic, OnUpdateReady , mqtt_client = None, use_external_attributes=False):
+    def __init__(self, topic, OnUpdateReady , mqtt_client = None, use_external_attributes=True):
         self.mqtt_client = mqtt_client
         # self.device_id = DeviceId
         # self.owner = Owner
@@ -75,7 +75,7 @@ class Agent:
         self.version = _version
         self.date = _date
         self.external_attributes = use_external_attributes
-        self.restore_Attributes(f"{self.external_attributes_path}{self.eui}.attributes.json")
+        self.restore_Attributes()
         
     def on_message(self, client, topic, msg):
         '''Handle the incomming messages
@@ -118,11 +118,14 @@ class Agent:
         else:
             return {}
         
-    def update_Attributes(self, attrList):
+    def update_Attributes(self, attrList, store=False):
         
         # update the attributes with the new values
         for name, value in attrList.items():
             self.attributes[name] = value      
+
+        if store:
+            self.store_Attributes()
 
     def dump_Attributes(self, startingWith = None):
         # dump the attributes to the console
@@ -154,7 +157,12 @@ class Agent:
                 return
             else:
                 filename = f"{self.external_attributes_path}/{self.eui}.attributes.json"
-           
+
+        # Create the directory if it does not exist
+        if not os.path.exists(self.external_attributes_path):
+            os.makedirs(self.external_attributes_path)
+            console.notice(f"Directory for external attribute storage: '{self.external_attributes_path}' created successfully.")
+        
         try:
             if os.path.exists(filename):
                 with open(filename, 'w') as f:  # update existing file
@@ -166,7 +174,7 @@ class Agent:
         except Exception as ex:
             console.error(f"store_Attributes: {ex}")
 
-    def restore_Attributes(self, filename):
+    def restore_Attributes(self, filename=None):
         # restore the attributes from a file
         
         if filename == None:
@@ -175,7 +183,7 @@ class Agent:
                 return
             else:
                 filename = f"{self.external_attributes_path}/{self.eui}.attributes.json"
-        
+
         try:
             if os.path.exists(filename):
                 with open(filename, 'r') as f:  # reading JSON object
