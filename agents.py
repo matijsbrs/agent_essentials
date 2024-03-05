@@ -52,6 +52,11 @@ class Agent:
     attributes = {}
     telemetry = {}
 
+    # @050324 ^MBRS Added standardizing Configuration interface.
+    Specific_Configuration  = None # The specific configuration of this device
+    Defaults_Configuration  = None # The defaults configuration of this device
+    Configuration           = None # The configuration of this device this will be the Merged config from the defaults and the specific configuration
+    
     # @010324 ^MBRS
     # When set True the pio will try to load external attributes from the json file located in [external_attribbutes_path]/[eui].attributes.json
     external_attributes = True 
@@ -63,8 +68,6 @@ class Agent:
 
     def __init__(self, topic, OnUpdateReady , mqtt_client = None, use_external_attributes=True):
         self.mqtt_client = mqtt_client
-        # self.device_id = DeviceId
-        # self.owner = Owner
         self.topic = topic
         self._on_message = self.on_message
         self._on_update_ready = OnUpdateReady
@@ -194,6 +197,16 @@ class Agent:
         except Exception as ex:
             console.error(f"restore_Attributes failed: {ex}")
             self.store_Attributes(filename)
+
+# Added 050324 ^MBRS standardizing Configuration interface.
+    def set_Configuration(self, configuration, defaults=None):
+        '''set the  configuration for the pio device.'''
+        # First store the defaults to the defaults_configuration
+        # Then store the specific configuration to the specific_configuration
+        # Then merge the defaults with the specific configuration to the configuration Where the specific configuration overwrites the defaults.
+        self.Defaults_Configuration = defaults
+        self.Specific_Configuration = configuration
+        self.Configuration = {**defaults, **configuration}
         
 # Added @140623 ^MBRS standardizing telemetry interface.
     def set_Telemetry(self, name, value):
@@ -246,6 +259,18 @@ class Agent:
         '''
         for field in self.telemetry_values:
             print(f"{field[0]} : {field[1]}")
+
+     def push_configuration(self,deviceName=None, values=[]):
+        '''
+        Push the configuration values to the MQTT broker format: self.topic {"configuration":[{configuration values}]}
+        '''
+        if ( deviceName == None ):
+            deviceName = self.eui
+        if values == []:
+            values = self.
+        payload = { 'configuration': [values] }
+        if ( self.mqtt_client is not None ) :
+            self.mqtt_client.publish(self.topic, json.dumps(payload))
 
 class Broker():
     def __init__(self, Host, ClientId=None, Username=None, Password=None, Port=1883):

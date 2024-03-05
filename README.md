@@ -39,13 +39,24 @@ As it can be that all new values are needed to perform an operation the delayed 
 
 ### Change Log :page_with_curl:
 
-**Version 1.3.4**
-> @01032024 ^MB
-> - *agents.py* now has support for attributes:
->   * Adding
->   * Updating
->   * Store to file
->   * Restore from file
+#### Version 1.3.5
+
+@05032024 ^MBRS
+
+* *agents.py* now has support for configuration storage
+  * Default configuration
+  * Specific configuration
+  * (True) configuration (Merged version of Defaults and Specific) 
+
+### Version 1.3.4
+
+@01032024 ^MB
+
+* *agents.py* now has support for attributes:
+  * Adding
+  * Updating
+  * Store to file
+  * Restore from file
 
 **Version 1.3.2**
 > @02022023 ^MB
