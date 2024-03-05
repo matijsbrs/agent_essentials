@@ -17,7 +17,10 @@
 #                Improved documentation
 # @140623_1.3.1 Nieuw minor release. 
 #                Added standardizing for telemetry and attributes
-
+# @050224_1.4.0 Major release
+#                Refactored the file
+#                Moved the Broker class to the broker.py file
+#                Improved documentation/comments
 
 
 # Description: A common control object.
@@ -29,15 +32,18 @@ import os
 import socket
 import paho.mqtt.client as mqtt
 import agent_essentials.console as console
+from agent_essentials.broker import Broker
 from agent_essentials.base import _version,_date
 from threading import Timer, Thread
 import os
 
 
 class Agent:
-    mqtt_client = None
+    broker : Broker = None
     eui = None
-    topic = None
+    topic = None # The topic the agent is transmitting by default
+    topics = []  # The topics the agent is listening to
+
     _on_message = None
     _on_update_ready = None
     timer     = None
@@ -49,57 +55,63 @@ class Agent:
 
     # Dictionary with attribute fields.
     # Dictionary with Telemetry fields.
-    attributes = {}
-    telemetry = {}
+    attributes  = {}
+    telemetry   = {}
 
     # @050324 ^MBRS Added standardizing Configuration interface.
-    Specific_Configuration      = None  # The specific configuration of this device
-    Defaults_Configuration      = None  # The defaults configuration of this device
-    Operational_Configuration   = None  # The operation configuration of this device this 
-                                        # will be the Merged config from the defaults and 
-                                        # the specific configuration
+    Specific_Configuration      = {'Specific'   : False}  # The specific configuration of this device
+    Defaults_Configuration      = {'Defaults'   : False}  # The defaults configuration of this device
+    Operational_Configuration   = {'Operational': False}  # The operation configuration of this device this 
+                                                          #  will be the Merged config from the defaults and 
+                                                          #  the specific configuration
     
     # @010324 ^MBRS
     # When set True the pio will try to load external attributes from the json file 
     # located in [external_attribbutes_path]/[eui].attributes.json
-    external_attributes = True 
+    external_attributes = False 
     external_attributes_path = "./pios" 
 
     def __init__(self) -> None:
         console.notice(f"basic agent ({self.version} @ {self.date})")
         
 
-    def __init__(self, topic, OnUpdateReady , mqtt_client = None, use_external_attributes=True):
-        self.mqtt_client = mqtt_client
+    def __init__(self, topic, OnUpdateReady, broker : Broker =None, use_external_attributes=True):
+        """
+        Initializes an instance of the Agent class.
+
+        Args:
+            topic (str): The topic associated with the agent.
+            OnUpdateReady (callable): A callback function to be called when an update is ready.
+            broker (Broker, optional): The broker object to register the agent with. Defaults to None.
+            use_external_attributes (bool, optional): Flag indicating whether to use external attributes. Defaults to True.
+        """
+        self.broker = broker
         self.topic = topic
+        self.topics = [topic]
         self._on_message = self.on_message
         self._on_update_ready = OnUpdateReady
-        self._timer     = None
-        self.on_update  = None
-        self.interval   = 1
+        self._timer = None
+        self.on_update = None
+        self.interval = 1
         self.is_running = False
         self.version = _version
         self.date = _date
         self.external_attributes = use_external_attributes
-        self.Defaults_Configuration = { 'Defaults': False }
-        self.Specific_Configuration = { 'Specific': False }
-        self.Operational_Configuration = { 'Operational': False }
         self.restore_Attributes()
+        self.broker.add(self)  # Register the agent with the broker to receive messages
         
     def on_message(self, client, topic, msg):
         '''Handle the incomming messages
         This function is a virtual function, it should be overriden by the inherriting class '''
         console.debug(f"{topic}:{msg}","Agent.message")
 
-    def Configure(self, mqtt_client):
-        '''
-        This function is called by the mqtt_client when the agent is added.
-        '''
-        self.mqtt_client    = mqtt_client
+    def add_Broker(self, broker: Broker):
+        self.broker = broker
+        self.broker.add(self, self.topic)  # Register the agent with the broker to receive messages
     
     def publish(self, topic, payload):
-        if ( self.mqtt_client != None):
-            self.mqtt_client.publish(topic,payload)
+        if ( self.broker != None):
+            self.broker.publish(topic,payload)
         else:
             console.error("mqtt_client not set. Device offline", self.eui)
 
@@ -146,16 +158,26 @@ class Agent:
                 console.debug(f"{name}:{value}",self.eui) 
     
     def push_Attributes(self,deviceName=None, values=[]):
-        '''
+        """
         Push the Attribute values to the MQTT broker format: self.topic {"attributes":[{attributes values}]}
-        '''
+        
+        Args:
+            deviceName (str, optional): The name of the device. If not provided, the eui will be used.
+            values (list, optional): The list of values to be pushed. If not provided, the agent's attributes will be used.
+
+        Returns:
+            None
+        
+        Raises:
+            None
+        """
         if ( deviceName == None ):
             deviceName = self.eui
         if values == []:
             values = self.attributes
         payload = { 'attributes': [values] }
-        if ( self.mqtt_client is not None ) :
-            self.mqtt_client.publish(self.topic, json.dumps(payload))
+        if ( self.broker is not None ) :
+            self.broker.publish(self.topic, json.dumps(payload))
 
 
     def store_Attributes(self, filename=None):
@@ -241,8 +263,11 @@ class Agent:
         # Then merge the defaults with the specific configuration to the configuration Where the specific configuration overwrites the defaults.
         self.Defaults_Configuration = defaults
         self.Specific_Configuration = configuration
-        self.Operational_Configuration = {**defaults, **configuration}
-        
+        if self.Defaults_Configuration is not None:
+            self.Operational_Configuration = {**defaults, **configuration}
+        else:
+            self.Operational_Configuration = configuration
+            
 # Added @140623 ^MBRS standardizing telemetry interface.
     def set_Telemetry(self, name, value):
         '''
@@ -285,8 +310,8 @@ class Agent:
         if values == []:
             values = self.telemetry
         payload = { 'telemetry': [values] }
-        if ( self.mqtt_client is not None ) :
-            self.mqtt_client.publish(self.topic, json.dumps(payload))
+        if ( self.broker is not None ) :
+            self.broker.publish(self.topic, json.dumps(payload))
 
     def dump_telemetry_values(self):
         '''
@@ -303,119 +328,6 @@ class Agent:
         if configuration == []:
             configuration = self.Operational_Configuration
         payload = { 'configuration': [configuration] }
-        if ( self.mqtt_client is not None ) :
-            self.mqtt_client.publish(self.topic, json.dumps(payload))
+        if ( self.broker is not None ) :
+            self.broker.publish(self.topic, json.dumps(payload))
 
-class Broker():
-    def __init__(self, Host, ClientId=None, Username=None, Password=None, Port=1883):
-        self.Agents = {}
-        if ( ClientId == None ):
-            ClientId =  f"{socket.getfqdn()}.{randint(1,999)}"
-        self.ClientId = ClientId
-        self.Client = mqtt.Client(self.ClientId)
-        self.Host = Host
-        self.Port = Port
-        self.Topics = []
-        self.Username = Username
-        self.Password = Password
-        if ( (Username != None ) & (Password == None)):
-            self.Client.username_pw_set(self.Username)
-        if ( (Username != None ) & (Password != None)):
-            self.Client.username_pw_set(self.Username, self.Password)
-        self._Thread = None
-        self.version = _version
-        self.date = _date
-        self._on_message = self.on_message
-        self.Debug = False
-        console.debug(f"Broker ({self.version}_{self.date}) for: {self.ClientId}")
-        
-    def publish(self, topic, payload):
-        self.Client.publish(topic,payload)
-
-    def on_disconnect(self):
-        console.error(f"Disconnected from broker ({self.Host})")
-        os._exit(0)
-
-    def on_connect_fail(self):
-        console.error(f"Could not connect to broker ({self.Host})")
-        os._exit(0)
-
-    def connect(self) -> bool:
-        self.Client.on_connect = self.on_connect
-        self.Client.on_message = self._on_message
-        # self.Client.on_disconnect = self.on_disconnect
-        self.Client.on_connect_fail = self.on_connect_fail
-        self.Client.connect(self.Host, self.Port, 60)
-        console.info(f"Connected to broker ({self.Host} as {self.ClientId})")
-        return self.Client.is_connected()
-    
-    def disconnect(self):
-        if self.Client.is_connected() == True:
-            try:
-                self.Client.disconnect()
-            except Exception as ex:
-                console.error(f"exception: {ex}")
-                console.error("Gracefull disconnecting {self.ClientId} failed.")
-        os._exit(0)
-        
-    def subscribe(self, topic):
-        self.Topics.append(topic)
-
-
-# use the topics as a list of topics. This will set all the topics to this agent.
-    def add(self, agent, topics = None):
-        agent.Configure(self.Client)
-        if ( topics == None) :
-            self.Agents[agent.topic] = agent.on_message
-            self.Topics.append(agent.topic)
-        else:
-            self.Agents['wildcard'] = agent.on_message
-            self.Topics = topics
-
-    def on_message(self, client, userdata, msg):
-        # t = msg.topic.split("/")
-        # referenceTopic = f"{t[0]}/{t[1]}/{t[2]}/{t[3]}"
-        if 'wildcard' in self.Agents:
-            self.Agents['wildcard'](client, msg.topic, msg)
-        else:
-            if msg.topic in self.Agents:
-                self.Agents[msg.topic](client, msg.topic, msg)
-        
-    def on_connect(self, client, userdata, flags, rc):
-        console.info("Connected with result code "+str(rc))
-        if ( rc == 5 ) : 
-            console.warning(f"Please check credentials")
-            raise ConnectionRefusedError
-            
-
-        for topic in self.Topics:
-            self.Client.subscribe(topic,2)
-            console.info(f"Subscribed to: {topic} @ {self.ClientId}" )
-        return True
-            
-    def loop(self):
-        try:
-            self.Client.loop_forever()
-        except Exception as exp:
-            if self.Debug == True:
-                raise exp # uncomment for debugging
-            console.error(f"Broker loop failed for client:{self.ClientId} with {exp}")
-            self.stop()
-        finally:
-            console.error(f"loop ended.")
-        
-
-    def start(self):
-        self._Thread = Thread(target=self.loop)
-        self._Thread.start()
-    
-    
-    def stop(self):
-        self.Client.loop_stop()
-        self.disconnect()
-    
-
-    def join(self):
-        if ( self._Thread != None):
-            self._Thread.join()
-    
