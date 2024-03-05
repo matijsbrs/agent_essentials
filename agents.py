@@ -53,12 +53,15 @@ class Agent:
     telemetry = {}
 
     # @050324 ^MBRS Added standardizing Configuration interface.
-    Specific_Configuration  = None # The specific configuration of this device
-    Defaults_Configuration  = None # The defaults configuration of this device
-    Configuration           = None # The configuration of this device this will be the Merged config from the defaults and the specific configuration
+    Specific_Configuration      = None  # The specific configuration of this device
+    Defaults_Configuration      = None  # The defaults configuration of this device
+    Operational_Configuration   = None  # The operation configuration of this device this 
+                                        # will be the Merged config from the defaults and 
+                                        # the specific configuration
     
     # @010324 ^MBRS
-    # When set True the pio will try to load external attributes from the json file located in [external_attribbutes_path]/[eui].attributes.json
+    # When set True the pio will try to load external attributes from the json file 
+    # located in [external_attribbutes_path]/[eui].attributes.json
     external_attributes = True 
     external_attributes_path = "./pios" 
 
@@ -78,6 +81,9 @@ class Agent:
         self.version = _version
         self.date = _date
         self.external_attributes = use_external_attributes
+        self.Defaults_Configuration = { 'Defaults': False }
+        self.Specific_Configuration = { 'Specific': False }
+        self.Operational_Configuration = { 'Operational': False }
         self.restore_Attributes()
         
     def on_message(self, client, topic, msg):
@@ -153,6 +159,19 @@ class Agent:
 
 
     def store_Attributes(self, filename=None):
+        """
+        Store the attributes to a file.
+
+        Args:
+            filename (str, optional): The name of the file to store the attributes. If not provided,
+                a default filename will be used based on the agent's eui.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
         # store the attributes to a file       
         if filename == None:
             if self.eui == None:
@@ -178,7 +197,23 @@ class Agent:
             console.error(f"store_Attributes: {ex}")
 
     def restore_Attributes(self, filename=None):
-        # restore the attributes from a file
+        """
+        Restores the attributes of the agent from a JSON file.
+        When self.external_attributes is set to False, the function will return without doing anything.
+
+        Args:
+            filename (str, optional): The path to the JSON file containing the attributes. If not provided,
+                the default filename will be used based on the agent's eui.
+
+        Returns:
+            None
+
+        Raises:
+            None
+
+        """
+        if not self.external_attributes:
+            return
         
         if filename == None:
             if self.eui == None:
@@ -206,7 +241,7 @@ class Agent:
         # Then merge the defaults with the specific configuration to the configuration Where the specific configuration overwrites the defaults.
         self.Defaults_Configuration = defaults
         self.Specific_Configuration = configuration
-        self.Configuration = {**defaults, **configuration}
+        self.Operational_Configuration = {**defaults, **configuration}
         
 # Added @140623 ^MBRS standardizing telemetry interface.
     def set_Telemetry(self, name, value):
@@ -260,15 +295,14 @@ class Agent:
         for field in self.telemetry_values:
             print(f"{field[0]} : {field[1]}")
 
-     def push_configuration(self,deviceName=None, values=[]):
+    def push_configuration(self, configuration=None):
         '''
         Push the configuration values to the MQTT broker format: self.topic {"configuration":[{configuration values}]}
+        If configuration == None assume the merged configuration
         '''
-        if ( deviceName == None ):
-            deviceName = self.eui
-        if values == []:
-            values = self.
-        payload = { 'configuration': [values] }
+        if configuration == []:
+            configuration = self.Operational_Configuration
+        payload = { 'configuration': [configuration] }
         if ( self.mqtt_client is not None ) :
             self.mqtt_client.publish(self.topic, json.dumps(payload))
 
