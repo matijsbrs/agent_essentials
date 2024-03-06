@@ -20,7 +20,55 @@ import os
 from icecream import ic
 
 class Broker():
+    """
+    Attributes:
+        Agents (dict): A dictionary of agents subscribed to topics.
+        ClientId (str): The client ID used to connect to the broker.
+        Client (mqtt.Client): The MQTT client instance.
+        Host (str): The hostname or IP address of the broker.
+        Port (int): The port number to connect to.
+        Topics (list): A list of topics to subscribe to.
+        Subscribed_Topics (list): A list of topics that have been successfully subscribed to.
+        Username (str): The username for authentication.
+        Password (str): The password for authentication.
+        _Thread (Thread): The thread used for running the MQTT client loop.
+        version (str): The version of the broker.
+        date (str): The date of the broker version.
+        _on_message (function): The callback function for handling incoming messages.
+        Debug (bool): Flag indicating whether debug mode is enabled.
+        Name (str): The name of the broker.
+
+    Methods:
+        publish(topic, payload): Publishes a message to the specified topic.
+        on_disconnect(): Callback function for handling disconnection from the broker.
+        on_connect_fail(): Callback function for handling connection failure to the broker.
+        connect() -> bool: Connects to the broker.
+        disconnect(): Disconnects from the broker.
+        subscribe(topic): Adds a topic to the list of topics to subscribe to.
+        _subscribe(topic): Subscribes to the specified topic.
+        _unsubscribe(topic): Unsubscribes from the specified topic.
+        add(agent): Adds an agent to the broker.
+        on_message(client, userdata, msg): Callback function for handling incoming messages.
+        on_connect(client, userdata, flags, rc): Callback function for handling successful connection to the broker.
+        loop(): Starts the MQTT client loop.
+        start(): Starts the broker in a separate thread.
+        stop(): Stops the broker and disconnects from the broker.
+        join(): Waits for the broker thread to complete.
+    """
+
     def __init__(self, Host, ClientId=None, Username=None, Password=None, Port=1883, Name='NoName'):
+        """
+        Represents a MQTT broker.
+
+        Args:
+            Host (str): The hostname or IP address of the broker.
+            ClientId (str, optional): The client ID to use. If not provided, a random client ID will be generated.
+            Username (str, optional): The username for authentication.
+            Password (str, optional): The password for authentication.
+            Port (int, optional): The port number to connect to. Default is 1883.
+            Name (str, optional): The name of the broker. Default is 'NoName'.
+
+        """
         self.Agents = {}
         if ( ClientId == None ):
             ClientId =  f"{socket.getfqdn()}.{randint(1,999)}"
@@ -44,10 +92,45 @@ class Broker():
         self.Name = Name
         console.debug(f"Broker '{self.Name}' ({self.version}_{self.date}) for: {self.ClientId}")
         
-    def publish(self, topic, payload):
-        self.Client.publish(topic,payload)
+    
+    def publish(self, payload):
+        """
+        Publishes the given payload to the broker. using the default topic. (self.topic)
 
+        Args:
+            payload: The payload to be published.
+
+        Returns:
+            None
+        """
+        self.Client.publish(self.topic, payload)
+
+    def publish(self, topic, payload):
+        """
+        Publishes a message to the specified topic.
+
+        Args:
+            topic (str): The topic to publish the message to.
+            payload (str): The message payload to be published.
+
+        Returns:
+            None
+        """
+        self.Client.publish(topic, payload)
+    
     def on_disconnect(self):
+        """
+        Handles the disconnection from the broker.
+
+        This method is called when the connection to the broker is lost.
+        It prints an error message indicating the disconnection and exits the program.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+        """
         console.error(f"Disconnected from broker ({self.Host})")
         os._exit(0)
 
@@ -76,16 +159,16 @@ class Broker():
     def subscribe(self, topic):
         self.Topics.append(topic)
 
-
     def _subscribe(self, topic):
+        # ic(topic, self.Subscribed_Topics)
         if topic not in self.Subscribed_Topics:
             # ic(topic, self.Client.subscribe(topic,2))
             state, mid = self.Client.subscribe(topic,2)
             if ( state == 0):
-                console.info(f"Broker:{self.Name} subscribed to: {topic} @ {self.ClientId}")
+                # console.info(f"Broker:{self.Name} subscribed to: {topic} @ {self.ClientId}")
                 self.Subscribed_Topics.append(topic)
-            else:
-                console.error(f"Broker:{self.Name} failed to subscribe to: {topic} @ {self.ClientId}")
+            
+                # console.error(f"Broker:{self.Name} failed to subscribe to: {topic} @ {self.ClientId}")
 
     def _unsubscribe(self, topic):
         if topic in self.Subscribed_Topics:
@@ -101,6 +184,7 @@ class Broker():
             self.Agents[topic] = agent.on_message
             self.Topics.append(topic)
             if( self.Client.is_connected() == True):
+                #console.notice(f"Broker:{self.Name} subscribing to: {topic} for {agent.eui} @ {self.ClientId}")
                 self._subscribe(topic)
                 # console.notice(f"Broker:{self.Name} subscribing to: {topic}")
                 # self.Client.subscribe(topic,2)    

@@ -45,7 +45,6 @@ class Agent:
     topics = []  # The topics the agent is listening to
 
     _on_message = None
-    _on_update_ready = None
     timer     = None
     on_update  = None
     interval   = 1
@@ -71,34 +70,27 @@ class Agent:
     external_attributes = False 
     external_attributes_path = "./pios" 
 
-    def __init__(self) -> None:
-        console.notice(f"basic agent ({self.version} @ {self.date})")
-        
-
-    def __init__(self, topic, OnUpdateReady, broker : Broker =None, use_external_attributes=True):
+    def __init__(self, broker : Broker =None):
         """
         Initializes an instance of the Agent class.
 
         Args:
-            topic (str): The topic associated with the agent.
-            OnUpdateReady (callable): A callback function to be called when an update is ready.
             broker (Broker, optional): The broker object to register the agent with. Defaults to None.
-            use_external_attributes (bool, optional): Flag indicating whether to use external attributes. Defaults to True.
         """
+        self.topics = [] # clear the topics
         self.broker = broker
-        self.topic = topic
-        self.topics = [topic]
+        if self.topic is not None and self.topic not in self.topics:
+            self.topics = [self.topic]
         self._on_message = self.on_message
-        self._on_update_ready = OnUpdateReady
         self._timer = None
         self.on_update = None
         self.interval = 1
         self.is_running = False
         self.version = _version
         self.date = _date
-        self.external_attributes = use_external_attributes
-        self.restore_Attributes()
-        self.broker.add(self)  # Register the agent with the broker to receive messages
+        # self.restore_Attributes()
+        if self.broker is not None:
+            self.broker.add(self)  # Register the agent with the broker to receive messages
         
     def on_message(self, client, topic, msg):
         '''Handle the incomming messages
@@ -115,17 +107,17 @@ class Agent:
         else:
             console.error("mqtt_client not set. Device offline", self.eui)
 
-    def _run(self):
-        self.on_update()
-        self.is_running = False
-        if self._on_update_ready != None:
-            self._on_update_ready(self)
+    # def _run(self):
+    #     self.on_update()
+    #     self.is_running = False
+    #     if self._on_update_ready != None:
+    #         self._on_update_ready(self)
 
-    def delayed_Update(self):
-        if not self.is_running:
-            self._timer = Timer(self.interval,self._run)
-            self._timer.start()
-            self.is_running = True
+    # def delayed_Update(self):
+    #     if not self.is_running:
+    #         self._timer = Timer(self.interval,self._run)
+    #         self._timer.start()
+    #         self.is_running = True
 
     # Added @140623 ^MBRS standardizing Attribute interface.
     def set_Attribute(self, name, value):
