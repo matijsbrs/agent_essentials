@@ -36,6 +36,7 @@ from agent_essentials.broker import Broker
 from agent_essentials.base import _version,_date
 from threading import Timer, Thread
 import os
+from icecream import ic
 
 
 class Agent:
@@ -209,6 +210,7 @@ class Agent:
                     f.write(json.dumps(self.attributes))
         except Exception as ex:
             console.error(f"store_Attributes: {ex}")
+            ic(self.attributes)
 
     def restore_Attributes(self, filename=None):
         """
@@ -239,7 +241,13 @@ class Agent:
         try:
             if os.path.exists(filename):
                 with open(filename, 'r') as f:  # reading JSON object
-                    self.attributes = json.loads(f.read())
+                    # first check if there is payload in the file
+                    content = f.read()
+                    if content == "":
+                        console.notice(f"Empty file calling store_Attributes: {filename}")
+                        self.store_Attributes(filename)
+                        return
+                    self.attributes = json.loads(content)
             else:
                 console.notice(f"File not found calling store_Attributes: {filename}")
                 self.store_Attributes(filename)
@@ -260,6 +268,83 @@ class Agent:
         else:
             self.Operational_Configuration = configuration
             
+# Added @28082024 ^MBRS store and restore telemetry information
+    def store_Telemetry(self, filename=None):
+        """
+        Store the telemetry information to a file which can be restored later.
+        The file will be stored in the external_attributes_path directory with the filename based on the agent's eui. if no filename is provided.
+
+        Args:
+            filename (str, optional): The name of the file to store the telementry. If not provided,
+                a default filename will be used based on the agent's eui. 
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
+        # store the telemetry to a file       
+        if filename == None:
+            if self.eui == None:
+                console.error(f"Cannot restore pio without eui.")
+                return
+            else:
+                filename = f"{self.external_attributes_path}/{self.eui}.telemetry.json"
+
+        # Create the directory if it does not exist
+        if not os.path.exists(self.external_attributes_path):
+            os.makedirs(self.external_attributes_path)
+            console.notice(f"Directory for external telemetry storage: '{self.external_attributes_path}' created successfully.")
+        
+        try:
+            if os.path.exists(filename):
+                with open(filename, 'w') as f:  # update existing file
+                    f.write(json.dumps(self.telemetry))
+            else:
+                console.notice(f"Creating telemetry file: {filename}")
+                with open(filename, 'x') as f:  # create new file
+                    f.write(json.dumps(self.telemetry))
+        except Exception as ex:
+            console.error(f"store_Telemetry: {ex}")
+
+    def restore_Telemetry(self, filename=None):
+        """
+        Restores the telemetry of the agent from a JSON file.
+        When self.external_attributes is set to False, the function will return without doing anything.
+
+        Args:
+            filename (str, optional): The path to the JSON file containing the telemetry. If not provided,
+                the default filename will be used based on the agent's eui.
+
+        Returns:
+            None
+
+        Raises:
+            None
+
+        """
+        if not self.external_attributes:
+            return
+        
+        if filename == None:
+            if self.eui == None:
+                console.error(f"Cannot restore pio without eui.")
+                return
+            else:
+                filename = f"{self.external_attributes_path}/{self.eui}.telemetry.json"
+
+        try:
+            if os.path.exists(filename):
+                with open(filename, 'r') as f:  # reading JSON object
+                    self.telemetry = json.loads(f.read())
+            else:
+                console.notice(f"File not found calling restore_Telemetry: {filename}")
+                self.store_Telemetry(filename)
+        except Exception as ex:
+            console.error(f"restore_Telemetry failed: {ex}")
+            self.store_Telemetry(filename)
+
 # Added @140623 ^MBRS standardizing telemetry interface.
     def set_Telemetry(self, name, value):
         '''
@@ -285,6 +370,8 @@ class Agent:
         else:
             self.telemetry_values.append(name)
             self.telemetry_values[name] = value
+        
+        self.store_Telemetry()
 
     def update_Telemetries(self, telemetryList):
         '''
@@ -292,6 +379,8 @@ class Agent:
         '''
         for name, value in telemetryList.items():
             self.telemetry[name] = value
+        
+        self.store_Telemetry()
         
     def push_telemetry(self,deviceName=None, values=[]):
         '''
