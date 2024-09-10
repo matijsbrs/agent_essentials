@@ -1,19 +1,22 @@
 # Date: 5 March 2024
 # Author: Ing. M. Behrens
-# @050224_1.4.0 Major release
+# @050224_1.4.0 ^MBRs Major release
 #                Moved the Broker class to the broker.py file
 #                Improved documentation/comments
 # @10092024_1.5.0 Major release
 #                Update to paho-mqtt 2.1.0 / MQTTv5
 #                Upgraded functions to use new MQTTv5 features
 #                Added support for MQTTv5 properties
-
+# @10092024_1.5.1 ^MBRs Minor release
+#                Added reference to all console outputs.
+#                Added debug output to the on_connect function
+#                Removed unused imports
+#                The paho-mqtt now uses V2 API instead of V1
 
 # Description: A common control object.
-import json
+
 from logging import info
 from random import randint
-import sys
 import os
 import socket
 import paho.mqtt.client as mqtt
@@ -21,7 +24,7 @@ import agent_essentials.console as console
 from agent_essentials.base import _version,_date
 from threading import Timer, Thread
 import os
-from icecream import ic
+
 
 class Broker():
     """
@@ -77,7 +80,7 @@ class Broker():
         if ( ClientId == None ):
             ClientId =  f"{socket.getfqdn()}.{randint(1,999)}"
         self.ClientId = ClientId
-        self.Client = mqtt.Client(client_id=self.ClientId, protocol=mqtt.MQTTv5)
+        self.Client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,client_id=self.ClientId)
         self.Host = Host
         self.Port = Port
         self.Topics = []
@@ -94,7 +97,7 @@ class Broker():
         self._on_message = self.on_message
         self.Debug = False
         self.Name = Name
-        console.debug(f"Broker '{self.Name}' ({self.version}_{self.date}) for: {self.ClientId}")
+        console.debug(f"broker.py:__init__ '{self.Name}' ({self.version}_{self.date}) for: {self.ClientId}")
         
     
     def publish(self, payload):
@@ -122,7 +125,7 @@ class Broker():
         """
         self.Client.publish(topic, payload)
     
-    def on_disconnect(self):
+    def on_disconnect(self, client, userdata, flags, reason_code):
         """
         Handles the disconnection from the broker.
 
@@ -135,20 +138,26 @@ class Broker():
         Returns:
         None
         """
-        console.error(f"Disconnected from broker ({self.Host})")
-        os._exit(0)
+        if reason_code == 0:
+            console.notice(f"broker.py:on_disconnect Successfully disconnected from broker ({self.Host})")
+        if reason_code > 0:
+            console.error(f"broker.py:on_disconnect Disconnected from broker ({self.Host})")
+        
+            os._exit(0)
 
     def on_connect_fail(self):
-        console.error(f"Could not connect to broker ({self.Host})")
+        console.error(f"broker.py:on_connect_fail Could not connect to broker ({self.Host})")
         os._exit(0)
 
     def connect(self) -> bool:
         self.Client.on_connect = self.on_connect
         self.Client.on_message = self._on_message
-        # self.Client.on_disconnect = self.on_disconnect
+        self.Client.on_disconnect = self.on_disconnect
         self.Client.on_connect_fail = self.on_connect_fail
         self.Client.connect(self.Host, self.Port, 60)
-        console.info(f"Connected to broker ({self.Host} as {self.ClientId})")
+        
+        
+        console.info(f"broker.py:connect Connected to broker ({self.Host} as {self.ClientId})")
         return self.Client.is_connected()
     
     def disconnect(self):
@@ -156,8 +165,8 @@ class Broker():
             try:
                 self.Client.disconnect()
             except Exception as ex:
-                console.error(f"exception: {ex}")
-                console.error("Gracefull disconnecting {self.ClientId} failed.")
+                console.error(f"broker.py:disconnect exception: {ex}")
+                console.error(f"broker.py:disconnect Gracefull disconnecting {self.ClientId} failed.")
         os._exit(0)
         
     def subscribe(self, topic):
@@ -169,18 +178,18 @@ class Broker():
             # ic(topic, self.Client.subscribe(topic,2))
             state, mid = self.Client.subscribe(topic,2)
             if ( state == 0):
-                # console.info(f"Broker:{self.Name} subscribed to: {topic} @ {self.ClientId}")
+                # console.info(f"broker.py:_subscribe Broker:{self.Name} subscribed to: {topic} @ {self.ClientId}")
                 self.Subscribed_Topics.append(topic)
-            
-                # console.error(f"Broker:{self.Name} failed to subscribe to: {topic} @ {self.ClientId}")
+            else: 
+                console.error(f"broker.py:_subscribe Broker:{self.Name} failed to subscribe to: {topic} @ {self.ClientId}")
 
     def _unsubscribe(self, topic):
         if topic in self.Subscribed_Topics:
             if ( self.Client.unsubscribe(topic) == 0):
-                console.info(f"Broker:{self.Name} unsubscribed from: {topic} @ {self.ClientId}")
+                console.info(f"broker.py:_unsubscribe Broker:{self.Name} unsubscribed from: {topic} @ {self.ClientId}")
                 self.Subscribed_Topics.remove(topic)
             else:
-                console.error(f"Broker:{self.Name} failed to unsubscribe from: {topic} @ {self.ClientId}")
+                console.error(f"broker.py:_unsubscribe Broker:{self.Name} failed to unsubscribe from: {topic} @ {self.ClientId}")
 
 # use the topics as a list of topics. This will set all the topics to this agent.
     def add(self, agent):
@@ -213,25 +222,25 @@ class Broker():
                 self.Agents[msg.topic](client, msg.topic, msg)
         
     def on_connect(self, client, userdata, flags, reason_code, properties):
-        console.info("Connected with reason code "+str(reason_code))
+        console.info(f"broker.py:on_connect {client} Connected with reason code "+str(reason_code))
         if reason_code == mqtt.CONNACK_REFUSED_NOT_AUTHORIZED:
-            console.warning(f"Not authorized to connect to broker")
+            console.warning(f"broker.py:on_connect {client} Not authorized to connect to broker")
             raise ConnectionRefusedError
         elif reason_code == mqtt.CONNACK_REFUSED_PROTOCOL_VERSION:
-            console.warning(f"Protocol version not supported by broker")
+            console.warning(f"broker.py:on_connect {client} Protocol version not supported by broker")
             raise ConnectionRefusedError
         elif reason_code == mqtt.CONNACK_REFUSED_IDENTIFIER_REJECTED:
-            console.warning(f"Client identifier rejected by broker")
+            console.warning(f"broker.py:on_connect {client} Client identifier rejected by broker")
             raise ConnectionRefusedError
         elif reason_code == mqtt.CONNACK_REFUSED_SERVER_UNAVAILABLE:
-            console.warning(f"Server unavailable")
+            console.warning(f"broker.py:on_connect {client} Server unavailable")
             raise ConnectionRefusedError
         elif reason_code == mqtt.CONNACK_ACCEPTED:
             for topic in self.Topics:
                 self._subscribe(topic)
             return True
         else:
-            console.error(f"Unexpected reason code: {reason_code}")
+            console.error(f"broker.py:on_connect {client} Unexpected reason code: {reason_code}")
             return False
             
     def loop(self):
@@ -240,10 +249,10 @@ class Broker():
         except Exception as exp:
             if self.Debug == True:
                 raise exp # uncomment for debugging
-            console.error(f"Broker loop failed for client:{self.ClientId} with {exp}")
+            console.error(f"broker.py:loop Broker loop failed for client:{self.ClientId} with {exp}")
             self.stop()
         finally:
-            console.error(f"loop ended.")
+            console.error(f"broker.py:loop loop ended.")
         
 
     def start(self):

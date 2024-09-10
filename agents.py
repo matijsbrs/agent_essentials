@@ -96,7 +96,7 @@ class Agent:
     def on_message(self, client, topic, msg):
         '''Handle the incomming messages
         This function is a virtual function, it should be overriden by the inherriting class '''
-        console.debug(f"{topic}:{msg}","Agent.message")
+        console.debug(f"agents.py:on_message {topic}:{msg}","Agent.message")
 
     def add_Broker(self, broker: Broker):
         self.broker = broker
@@ -106,7 +106,7 @@ class Agent:
         if ( self.broker != None):
             self.broker.publish(topic,payload)
         else:
-            console.error("mqtt_client not set. Device offline", self.eui)
+            console.error("agents.py:publish mqtt_client not set. Device offline", self.eui)
 
     # def _run(self):
     #     self.on_update()
@@ -146,9 +146,9 @@ class Agent:
         for name, value in self.attributes.items():
             if ( startingWith != None ):
                 if ( name.startswith(startingWith) ):
-                    console.debug(f"{name}:{value}",self.eui) 
+                    console.debug(f"agents.py:dump_Attributes {name}:{value}",self.eui) 
             else:
-                console.debug(f"{name}:{value}",self.eui) 
+                console.debug(f"agents.py:dump_Attributes {name}:{value}",self.eui) 
     
     def push_Attributes(self,deviceName=None, values=[]):
         """
@@ -190,7 +190,7 @@ class Agent:
         # store the attributes to a file       
         if filename == None:
             if self.eui == None:
-                console.error(f"Cannot restore pio without eui.")
+                console.error(f"agents.py:store_Attributes Cannot restore pio without eui.")
                 return
             else:
                 filename = f"{self.external_attributes_path}/{self.eui}.attributes.json"
@@ -198,7 +198,7 @@ class Agent:
         # Create the directory if it does not exist
         if not os.path.exists(self.external_attributes_path):
             os.makedirs(self.external_attributes_path)
-            console.notice(f"Directory for external attribute storage: '{self.external_attributes_path}' created successfully.")
+            console.notice(f"agents.py:store_Attributes Directory for external attribute storage: '{self.external_attributes_path}' created successfully.")
         
         try:
             if os.path.exists(filename):
@@ -209,8 +209,8 @@ class Agent:
                 with open(filename, 'x') as f:  # create new file
                     f.write(json.dumps(self.attributes))
         except Exception as ex:
-            console.error(f"store_Attributes: {ex}")
-            ic(self.attributes)
+            console.error(f"Agents.py:store_Attributes: {ex}")
+            
 
     def restore_Attributes(self, filename=None):
         """
@@ -233,7 +233,7 @@ class Agent:
         
         if filename == None:
             if self.eui == None:
-                console.error(f"Cannot restore pio without eui.")
+                console.error(f"agents.py:restore_Attributes Cannot restore pio without eui.")
                 return
             else:
                 filename = f"{self.external_attributes_path}/{self.eui}.attributes.json"
@@ -287,7 +287,7 @@ class Agent:
         # store the telemetry to a file       
         if filename == None:
             if self.eui == None:
-                console.error(f"Cannot restore pio without eui.")
+                console.error(f"agents.py:store_Telemetry Cannot restore pio without eui.")
                 return
             else:
                 filename = f"{self.external_attributes_path}/{self.eui}.telemetry.json"
@@ -295,18 +295,18 @@ class Agent:
         # Create the directory if it does not exist
         if not os.path.exists(self.external_attributes_path):
             os.makedirs(self.external_attributes_path)
-            console.notice(f"Directory for external telemetry storage: '{self.external_attributes_path}' created successfully.")
+            console.notice(f"agents.py:store_Telemetry Directory for external telemetry storage: '{self.external_attributes_path}' created successfully.")
         
         try:
             if os.path.exists(filename):
                 with open(filename, 'w') as f:  # update existing file
                     f.write(json.dumps(self.telemetry))
             else:
-                console.notice(f"Creating telemetry file: {filename}")
+                console.notice(f"agents.py:store_Telemetry Creating telemetry file: {filename}")
                 with open(filename, 'x') as f:  # create new file
                     f.write(json.dumps(self.telemetry))
         except Exception as ex:
-            console.error(f"store_Telemetry: {ex}")
+            console.error(f"agents.py:store_Telemetry: {ex}")
 
     def restore_Telemetry(self, filename=None):
         """
@@ -329,7 +329,7 @@ class Agent:
         
         if filename == None:
             if self.eui == None:
-                console.error(f"Cannot restore pio without eui.")
+                console.error(f"agents.py:restore_Telemetry Cannot restore pio without eui.")
                 return
             else:
                 filename = f"{self.external_attributes_path}/{self.eui}.telemetry.json"
@@ -339,10 +339,10 @@ class Agent:
                 with open(filename, 'r') as f:  # reading JSON object
                     self.telemetry = json.loads(f.read())
             else:
-                console.notice(f"File not found calling restore_Telemetry: {filename}")
+                console.notice(f"agents.py:restore_Telemetry File not found calling restore_Telemetry: {filename}")
                 self.store_Telemetry(filename)
         except Exception as ex:
-            console.error(f"restore_Telemetry failed: {ex}")
+            console.error(f"agents.py:restore_Telemetry failed: {ex}")
             self.store_Telemetry(filename)
 
 # Added @140623 ^MBRS standardizing telemetry interface.
