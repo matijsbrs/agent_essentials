@@ -3,6 +3,10 @@
 # @050224_1.4.0 Major release
 #                Moved the Broker class to the broker.py file
 #                Improved documentation/comments
+# @10092024_1.5.0 Major release
+#                Update to paho-mqtt 2.1.0 / MQTTv5
+#                Upgraded functions to use new MQTTv5 features
+#                Added support for MQTTv5 properties
 
 
 # Description: A common control object.
@@ -73,7 +77,7 @@ class Broker():
         if ( ClientId == None ):
             ClientId =  f"{socket.getfqdn()}.{randint(1,999)}"
         self.ClientId = ClientId
-        self.Client = mqtt.Client(self.ClientId)
+        self.Client = mqtt.Client(client_id=self.ClientId, protocol=mqtt.MQTTv5)
         self.Host = Host
         self.Port = Port
         self.Topics = []
@@ -208,17 +212,27 @@ class Broker():
             if msg.topic in self.Agents:
                 self.Agents[msg.topic](client, msg.topic, msg)
         
-    def on_connect(self, client, userdata, flags, rc):
-        console.info("Connected with result code "+str(rc))
-        if ( rc == 5 ) : 
-            console.warning(f"Please check credentials")
+    def on_connect(self, client, userdata, flags, reason_code, properties):
+        console.info("Connected with reason code "+str(reason_code))
+        if reason_code == mqtt.CONNACK_REFUSED_NOT_AUTHORIZED:
+            console.warning(f"Not authorized to connect to broker")
             raise ConnectionRefusedError
-
-        for topic in self.Topics:
-            # check if the topic is already subscribed
-            self._subscribe(topic)
-        
-        return True
+        elif reason_code == mqtt.CONNACK_REFUSED_PROTOCOL_VERSION:
+            console.warning(f"Protocol version not supported by broker")
+            raise ConnectionRefusedError
+        elif reason_code == mqtt.CONNACK_REFUSED_IDENTIFIER_REJECTED:
+            console.warning(f"Client identifier rejected by broker")
+            raise ConnectionRefusedError
+        elif reason_code == mqtt.CONNACK_REFUSED_SERVER_UNAVAILABLE:
+            console.warning(f"Server unavailable")
+            raise ConnectionRefusedError
+        elif reason_code == mqtt.CONNACK_ACCEPTED:
+            for topic in self.Topics:
+                self._subscribe(topic)
+            return True
+        else:
+            console.error(f"Unexpected reason code: {reason_code}")
+            return False
             
     def loop(self):
         try:
