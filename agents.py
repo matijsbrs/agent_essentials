@@ -55,7 +55,7 @@ class Agent:
 
     # Dictionary with attribute fields.
     # Dictionary with Telemetry fields.
-    attributes  = {}
+    attributes  = {} 
     telemetry   = {}
 
     # @050324 ^MBRS Added standardizing Configuration interface.
@@ -65,7 +65,11 @@ class Agent:
                                                           #  will be the Merged config from the defaults and 
                                                           #  the specific configuration
     
-    # @010324 ^MBRS
+    system_configuration = None          # Contains the system configuration
+    operational_configuration = None     # Contains the operational configuration eg. specific to this device. (mostly derived from the system configuration)
+
+    
+     # @010324 ^MBRS
     # When set True the pio will try to load external attributes from the json file 
     # located in [external_attribbutes_path]/[eui].attributes.json
     external_attributes = False 
@@ -256,13 +260,24 @@ class Agent:
             self.store_Attributes(filename)
 
 # Added 050324 ^MBRS standardizing Configuration interface.
-    def set_Configuration(self, configuration, defaults=None):
-        '''set the  configuration for the pio device.'''
+    def set_Configuration(self, configuration, defaults=None, system_configuration=None):
+        """
+        Set the configuration for the agent.
+
+        Args:
+            configuration (dict): The specific configuration for the agent.
+            defaults (dict, optional): The default configuration for the agent. Defaults to None.
+            system_configuration (dict, optional): The system configuration for the agent. Defaults to None.
+
+        Returns:
+            None
+        """
         # First store the defaults to the defaults_configuration
         # Then store the specific configuration to the specific_configuration
         # Then merge the defaults with the specific configuration to the configuration Where the specific configuration overwrites the defaults.
         self.Defaults_Configuration = defaults
         self.Specific_Configuration = configuration
+        self.system_configuration = system_configuration
         if self.Defaults_Configuration is not None:
             self.Operational_Configuration = {**defaults, **configuration}
         else:
