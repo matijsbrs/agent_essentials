@@ -111,18 +111,7 @@ class Agent:
             self.broker.publish(topic,payload)
         else:
             console.error("agents.py:publish mqtt_client not set. Device offline", self.eui)
-
-    # def _run(self):
-    #     self.on_update()
-    #     self.is_running = False
-    #     if self._on_update_ready != None:
-    #         self._on_update_ready(self)
-
-    # def delayed_Update(self):
-    #     if not self.is_running:
-    #         self._timer = Timer(self.interval,self._run)
-    #         self._timer.start()
-    #         self.is_running = True
+ 
 
     # Added @140623 ^MBRS standardizing Attribute interface.
     def set_Attribute(self, name, value):
