@@ -42,6 +42,7 @@ from icecream import ic
 class Agent:
     broker : Broker = None
     eui = None
+    nwid = None
     topic = None # The topic the agent is transmitting by default
     topics = []  # The topics the agent is listening to
 
@@ -67,13 +68,6 @@ class Agent:
     
     system_configuration = None          # Contains the system configuration
     operational_configuration = None     # Contains the operational configuration eg. specific to this device. (mostly derived from the system configuration)
-
-    
-     # @010324 ^MBRS
-    # When set True the pio will try to load external attributes from the json file 
-    # located in [external_attribbutes_path]/[eui].attributes.json
-    external_attributes = False 
-    external_attributes_path = "./pios" 
 
     def __init__(self, broker : Broker =None):
         """
@@ -112,150 +106,27 @@ class Agent:
         else:
             console.error("agents.py:publish mqtt_client not set. Device offline", self.eui)
  
-
-    # Added @140623 ^MBRS standardizing Attribute interface.
-    def set_Attribute(self, name, value):
-        # set the value of the attribute 
-        self.attributes[name] = value
-
-    def get_Attribute(self, name):
-        # get the value of the attribute
-        if ( name in self.attributes ):
-            return self.attributes[name]
-        else:
-            return {}
-        
-    def update_Attributes(self, attrList, store=False):
-        
-        # update the attributes with the new values
-        for name, value in attrList.items():
-            self.attributes[name] = value      
-
-        if store:
-            self.store_Attributes()
-
-    def dump_Attributes(self, startingWith = None):
-        # dump the attributes to the console
-        for name, value in self.attributes.items():
-            if ( startingWith != None ):
-                if ( name.startswith(startingWith) ):
-                    console.debug(f"agents.py:dump_Attributes {name}:{value}",self.eui) 
-            else:
-                console.debug(f"agents.py:dump_Attributes {name}:{value}",self.eui) 
-    
-    def push_Attributes(self,deviceName=None, values=[]):
-        """
-        Push the Attribute values to the MQTT broker format: self.topic {"attributes":[{attributes values}]}
-        
-        Args:
-            deviceName (str, optional): The name of the device. If not provided, the eui will be used.
-            values (list, optional): The list of values to be pushed. If not provided, the agent's attributes will be used.
-
-        Returns:
-            None
-        
-        Raises:
-            None
-        """
+    def push_payload(self,payloadName = 'attributes', deviceName=None, payload=[]):
+        '''
+        Push the payload values to the MQTT broker format: self.topic {"payloadName":[{payload}]}
+        '''
         if ( deviceName == None ):
             deviceName = self.eui
-        if values == []:
-            values = self.attributes
-        payload = { 'attributes': [values] }
+        if payload == []:
+            payload = self.telemetry
+        payload = { payloadName: [payload] }
         if ( self.broker is not None ) :
             self.broker.publish(self.topic, json.dumps(payload))
 
 
-    def store_Attributes(self, filename=None):
-        """
-        Store the attributes to a file.
-
-        Args:
-            filename (str, optional): The name of the file to store the attributes. If not provided,
-                a default filename will be used based on the agent's eui.
-
-        Returns:
-            None
-
-        Raises:
-            None
-        """
-        # store the attributes to a file       
-        if filename == None:
-            if self.eui == None:
-                console.error(f"agents.py:store_Attributes Cannot restore pio without eui.")
-                return
-            else:
-                filename = f"{self.external_attributes_path}/{self.eui}.attributes.json"
-
-        # Create the directory if it does not exist
-        if not os.path.exists(self.external_attributes_path):
-            os.makedirs(self.external_attributes_path)
-            console.notice(f"agents.py:store_Attributes Directory for external attribute storage: '{self.external_attributes_path}' created successfully.")
-        
-        try:
-            if os.path.exists(filename):
-                with open(filename, 'w') as f:  # update existing file
-                    f.write(json.dumps(self.attributes))
-            else:
-                console.notice(f"Creating atrtibute file: {filename}")
-                with open(filename, 'x') as f:  # create new file
-                    f.write(json.dumps(self.attributes))
-        except Exception as ex:
-            console.error(f"Agents.py:store_Attributes: {ex}")
-            
-
-    def restore_Attributes(self, filename=None):
-        """
-        Restores the attributes of the agent from a JSON file.
-        When self.external_attributes is set to False, the function will return without doing anything.
-
-        Args:
-            filename (str, optional): The path to the JSON file containing the attributes. If not provided,
-                the default filename will be used based on the agent's eui.
-
-        Returns:
-            None
-
-        Raises:
-            None
-
-        """
-        if not self.external_attributes:
-            return
-        
-        if filename == None:
-            if self.eui == None:
-                console.error(f"agents.py:restore_Attributes Cannot restore pio without eui.")
-                return
-            else:
-                filename = f"{self.external_attributes_path}/{self.eui}.attributes.json"
-
-        try:
-            if os.path.exists(filename):
-                with open(filename, 'r') as f:  # reading JSON object
-                    # first check if there is payload in the file
-                    content = f.read()
-                    if content == "":
-                        console.notice(f"Empty file calling store_Attributes: {filename}")
-                        self.store_Attributes(filename)
-                        return
-                    self.attributes = json.loads(content)
-            else:
-                console.notice(f"File not found calling store_Attributes: {filename}")
-                self.store_Attributes(filename)
-        except Exception as ex:
-            console.error(f"restore_Attributes failed: {ex}")
-            self.store_Attributes(filename)
-
-# Added 050324 ^MBRS standardizing Configuration interface.
+    # Added 050324 ^MBRS standardizing Configuration interface.
     def set_Configuration(self, configuration, defaults=None, system_configuration=None):
         """
         Set the configuration for the agent.
 
         Args:
             configuration (dict): The specific configuration for the agent.
-            defaults (dict, optional): The default configuration for the agent. Defaults to None.
+            defaults (dict, optional): The dfault configuration for the agent. Defaults to None.
             system_configuration (dict, optional): The system configuration for the agent. Defaults to None.
 
         Returns:
@@ -271,140 +142,7 @@ class Agent:
             self.Operational_Configuration = {**defaults, **configuration}
         else:
             self.Operational_Configuration = configuration
-            
-# Added @28082024 ^MBRS store and restore telemetry information
-    def store_Telemetry(self, filename=None):
-        """
-        Store the telemetry information to a file which can be restored later.
-        The file will be stored in the external_attributes_path directory with the filename based on the agent's eui. if no filename is provided.
-
-        Args:
-            filename (str, optional): The name of the file to store the telementry. If not provided,
-                a default filename will be used based on the agent's eui. 
-
-        Returns:
-            None
-
-        Raises:
-            None
-        """
-        # store the telemetry to a file       
-        if filename == None:
-            if self.eui == None:
-                console.error(f"agents.py:store_Telemetry Cannot restore pio without eui.")
-                return
-            else:
-                filename = f"{self.external_attributes_path}/{self.eui}.telemetry.json"
-
-        # Create the directory if it does not exist
-        if not os.path.exists(self.external_attributes_path):
-            os.makedirs(self.external_attributes_path)
-            console.notice(f"agents.py:store_Telemetry Directory for external telemetry storage: '{self.external_attributes_path}' created successfully.")
-        
-        try:
-            if os.path.exists(filename):
-                with open(filename, 'w') as f:  # update existing file
-                    f.write(json.dumps(self.telemetry))
-            else:
-                console.notice(f"agents.py:store_Telemetry Creating telemetry file: {filename}")
-                with open(filename, 'x') as f:  # create new file
-                    f.write(json.dumps(self.telemetry))
-        except Exception as ex:
-            console.error(f"agents.py:store_Telemetry: {ex}")
-
-    def restore_Telemetry(self, filename=None):
-        """
-        Restores the telemetry of the agent from a JSON file.
-        When self.external_attributes is set to False, the function will return without doing anything.
-
-        Args:
-            filename (str, optional): The path to the JSON file containing the telemetry. If not provided,
-                the default filename will be used based on the agent's eui.
-
-        Returns:
-            None
-
-        Raises:
-            None
-
-        """
-        if not self.external_attributes:
-            return
-        
-        if filename == None:
-            if self.eui == None:
-                console.error(f"agents.py:restore_Telemetry Cannot restore pio without eui.")
-                return
-            else:
-                filename = f"{self.external_attributes_path}/{self.eui}.telemetry.json"
-
-        try:
-            if os.path.exists(filename):
-                with open(filename, 'r') as f:  # reading JSON object
-                    self.telemetry = json.loads(f.read())
-            else:
-                console.notice(f"agents.py:restore_Telemetry File not found calling restore_Telemetry: {filename}")
-                self.store_Telemetry(filename)
-        except Exception as ex:
-            console.error(f"agents.py:restore_Telemetry failed: {ex}")
-            self.store_Telemetry(filename)
-
-# Added @140623 ^MBRS standardizing telemetry interface.
-    def set_Telemetry(self, name, value):
-        '''
-        Set a specific value of a telemetry field
-        '''
-        self.telemetry[name] = value
-
-    def get_Telemetry(self, name):
-        '''
-        Get a specific value of a telemetry field
-        '''
-        if ( name in self.telemetry ):
-            return self.telemetry[name]
-        else:
-            return {}
-
-    def update_telemetry_value(self, name, value):
-        '''
-        Update a specific value of a telemetry field
-        '''
-        if ( name in self.telemetry_values ):
-            self.telemetry_values[name] = value
-        else:
-            self.telemetry_values.append(name)
-            self.telemetry_values[name] = value
-        
-        self.store_Telemetry()
-
-    def update_Telemetries(self, telemetryList):
-        '''
-        Update the telemetry fields with the new values
-        '''
-        for name, value in telemetryList.items():
-            self.telemetry[name] = value
-        
-        self.store_Telemetry()
-        
-    def push_telemetry(self,deviceName=None, values=[]):
-        '''
-        Push the telemetry values to the MQTT broker format: self.topic {"telemetry":[{telemetry values}]}
-        '''
-        if ( deviceName == None ):
-            deviceName = self.eui
-        if values == []:
-            values = self.telemetry
-        payload = { 'telemetry': [values] }
-        if ( self.broker is not None ) :
-            self.broker.publish(self.topic, json.dumps(payload))
-
-    def dump_telemetry_values(self):
-        '''
-        Debug function to dump the telemetry values to the console
-        '''
-        for field in self.telemetry_values:
-            print(f"{field[0]} : {field[1]}")
-
+       
     def push_configuration(self, configuration=None):
         '''
         Push the configuration values to the MQTT broker format: self.topic {"configuration":[{configuration values}]}
